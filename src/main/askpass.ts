@@ -43,10 +43,10 @@ export async function startAskPass(handler: (prompt: string) => Promise<string |
   const slash = (p: string): string => p.replace(/\\/g, '/')
   writeFileSync(script, `#!/bin/sh\nELECTRON_RUN_AS_NODE=1 exec "${slash(process.execPath)}" "${slash(clientJs)}" "$@"\n`)
   if (process.platform === 'win32') {
-    socketPath = `\\\\.\\pipe\\sourcecontrol-askpass-${process.pid}`
+    socketPath = `\\\\.\\pipe\\verdigit-askpass-${process.pid}`
   } else {
     chmodSync(script, 0o755)
-    socketPath = join(tmpdir(), `sourcecontrol-askpass-${process.pid}.sock`)
+    socketPath = join(tmpdir(), `verdigit-askpass-${process.pid}.sock`)
     if (existsSync(socketPath)) unlinkSync(socketPath)
   }
 

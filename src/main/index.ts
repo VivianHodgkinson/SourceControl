@@ -16,6 +16,7 @@ import { checkForUpdates, getUpdateStatus, initUpdater, installUpdate, openRelea
 let win: BrowserWindow | null = null
 
 relaunchAppImageWithoutSandboxIfNeeded()
+store.migrateFromOldName()
 if (process.platform === 'win32') app.setAppUserModelId('za.co.issuesoftware.sourcecontrol')
 
 const devIcon = join(__dirname, '../../resources/icon.png')
@@ -49,7 +50,7 @@ function createWindow(): void {
     minHeight: 600,
     show: false,
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#080c0a' : '#ffffff',
-    title: 'SourceControl',
+    title: 'Verdigit',
     autoHideMenuBar: true,
     ...(process.platform === 'linux' && existsSync(devIcon) ? { icon: devIcon } : {}),
     webPreferences: {
@@ -360,12 +361,12 @@ async function checkGitInstalled(): Promise<void> {
   const { response } = await dialog.showMessageBox(win, {
     type: 'warning',
     title: 'Git not found',
-    message: 'SourceControl needs Git, but it could not be found.',
+    message: 'Verdigit needs Git, but it could not be found.',
     detail: windows
-      ? 'Install Git for Windows (the default options are fine). SourceControl picks it up automatically, or you can point to git.exe in Settings → Git executable.'
+      ? 'Install Git for Windows (the default options are fine). Verdigit picks it up automatically, or you can point to git.exe in Settings → Git executable.'
       : process.platform === 'darwin'
-        ? 'Install Git (for example with `xcode-select --install` or Homebrew), then restart SourceControl.'
-        : 'Install git with your package manager (e.g. `sudo apt install git`, `sudo dnf install git`, `sudo pacman -S git`), then restart SourceControl.',
+        ? 'Install Git (for example with `xcode-select --install` or Homebrew), then restart Verdigit.'
+        : 'Install git with your package manager (e.g. `sudo apt install git`, `sudo dnf install git`, `sudo pacman -S git`), then restart Verdigit.',
     buttons: windows ? ['Download Git', 'Close'] : ['OK'],
     defaultId: 0
   })

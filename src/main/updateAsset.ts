@@ -18,8 +18,8 @@ const ARCH_NAMES: Record<InstallKind, Partial<Record<string, string>>> = {
 export function assetName(kind: InstallKind, arch: string, version: string): string | null {
   const a = ARCH_NAMES[kind][arch]
   if (!a) return null
-  if (kind === 'portable') return `SourceControl-${version}-portable-${a}.exe`
-  return `SourceControl-${version}-linux-${a}.${kind}`
+  if (kind === 'portable') return `Verdigit-${version}-portable-${a}.exe`
+  return `Verdigit-${version}-linux-${a}.${kind}`
 }
 
 /** A command the user can paste to install a downloaded package, if there is one. */

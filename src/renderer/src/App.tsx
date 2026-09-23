@@ -148,7 +148,7 @@ export function App() {
       <div className="tabs">
         <div className="brand">
           <Icon name="logo" size={18} />
-          <span>SourceControl</span>
+          <span>Verdigit</span>
         </div>
         <div
           className="tab-strip"

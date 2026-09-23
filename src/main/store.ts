@@ -1,5 +1,5 @@
 import { app, safeStorage } from 'electron'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import type { Settings } from '@shared/types'
@@ -9,6 +9,25 @@ interface StoredSettings extends Omit<Settings, 'hasGitHubToken'> {
 }
 
 const file = (): string => join(app.getPath('userData'), 'settings.json')
+
+/**
+ * The app was called SourceControl before 0.2.0, and Electron names the settings folder
+ * after the app. On first run under the new name, carry the old settings and UI state over.
+ */
+export function migrateFromOldName(): void {
+  const oldDir = join(app.getPath('appData'), 'SourceControl')
+  const newDir = app.getPath('userData')
+  if (oldDir === newDir || existsSync(join(newDir, 'settings.json')) || !existsSync(join(oldDir, 'settings.json'))) return
+  try {
+    mkdirSync(newDir, { recursive: true })
+    for (const item of ['settings.json', 'Local Storage']) {
+      const src = join(oldDir, item)
+      if (existsSync(src)) cpSync(src, join(newDir, item), { recursive: true })
+    }
+  } catch {
+    // Best effort: worst case the user starts with default settings.
+  }
+}
 
 let cache: StoredSettings | null = null
 
@@ -41,8 +60,10 @@ function persist(): void {
 }
 
 export function getSettings(): Settings {
-  const { gitHubToken, ...rest } = load()
-  return { ...rest, hasGitHubToken: !!gitHubToken }
+  const { gitHubToken: _stored, ...rest } = load()
+  // A token saved under a different app identity can't be decrypted; report it as missing
+  // so Settings asks for it again rather than failing later.
+  return { ...rest, hasGitHubToken: getGitHubToken() !== null }
 }
 
 export function saveSettings(patch: Partial<Settings>): Settings {

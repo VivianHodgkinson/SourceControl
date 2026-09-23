@@ -82,7 +82,7 @@ export function UpdateSettings({ autoUpdate, setAutoUpdate }: { autoUpdate: bool
     <>
       <div className="row">
         <span className="grow">
-          SourceControl <b>{status.currentVersion}</b>
+          Verdigit <b>{status.currentVersion}</b>
           {status.releaseUrl && status.version && (
             <a href="#" style={{ color: 'var(--accent)', marginLeft: 10, fontSize: 12 }} onClick={(e) => (e.preventDefault(), api.openReleasePage())}>
               What's new in {status.version}

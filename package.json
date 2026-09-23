@@ -1,7 +1,7 @@
 {
   "name": "sourcecontrol",
   "version": "0.1.7",
-  "description": "A dark & green desktop Git client with built-in Git Flow",
+  "description": "Verdigit: a dark & green desktop Git client with Git Flow built in",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
@@ -29,10 +29,10 @@
     "typescript": "^7.0.2",
     "vite": "^7.3.6"
   },
-  "productName": "SourceControl",
+  "productName": "Verdigit",
   "build": {
     "appId": "za.co.issuesoftware.sourcecontrol",
-    "productName": "SourceControl",
+    "productName": "Verdigit",
     "executableName": "sourcecontrol",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "files": [
@@ -46,7 +46,7 @@
     "publish": {
       "provider": "github",
       "owner": "VivianHodgkinson",
-      "repo": "SourceControl",
+      "repo": "Verdigit",
       "releaseType": "draft"
     },
     "win": {
@@ -72,7 +72,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "SourceControl",
+      "shortcutName": "Verdigit",
       "artifactName": "${productName}-${version}-setup-${arch}.${ext}"
     },
     "portable": {
@@ -87,7 +87,7 @@
       "vendor": "Issue Software",
       "desktop": {
         "entry": {
-          "Name": "SourceControl",
+          "Name": "Verdigit",
           "GenericName": "Git Client",
           "Keywords": "git;source;control;version;gitflow;"
         }
@@ -182,10 +182,10 @@
       "icon": "resources/icon.png"
     }
   },
-  "homepage": "https://github.com/VivianHodgkinson/SourceControl",
+  "homepage": "https://github.com/VivianHodgkinson/Verdigit",
   "repository": {
     "type": "git",
-    "url": "https://github.com/VivianHodgkinson/SourceControl.git"
+    "url": "https://github.com/VivianHodgkinson/Verdigit.git"
   },
   "desktopName": "sourcecontrol.desktop",
   "dependencies": {

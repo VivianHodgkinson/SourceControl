@@ -306,15 +306,15 @@ async function main(): Promise<void> {
   })
 
   await test('update asset names match published release files', async () => {
-    // Names as published in real releases (v0.1.3 / v0.1.4).
-    assert.equal(assetName('deb', 'x64', '0.1.4'), 'SourceControl-0.1.4-linux-amd64.deb')
-    assert.equal(assetName('deb', 'arm64', '0.1.4'), 'SourceControl-0.1.4-linux-arm64.deb')
-    assert.equal(assetName('rpm', 'x64', '0.1.3'), 'SourceControl-0.1.3-linux-x86_64.rpm')
-    assert.equal(assetName('rpm', 'arm64', '0.1.3'), 'SourceControl-0.1.3-linux-aarch64.rpm')
-    assert.equal(assetName('pacman', 'x64', '1.0.0'), 'SourceControl-1.0.0-linux-x64.pacman')
-    assert.equal(assetName('pacman', 'arm64', '1.0.0'), 'SourceControl-1.0.0-linux-aarch64.pacman')
-    assert.equal(assetName('tar.gz', 'x64', '1.0.0'), 'SourceControl-1.0.0-linux-x64.tar.gz')
-    assert.equal(assetName('portable', 'x64', '0.1.2'), 'SourceControl-0.1.2-portable-x64.exe')
+    // Same shape as published release files (e.g. SourceControl-0.1.4-linux-amd64.deb before the rename).
+    assert.equal(assetName('deb', 'x64', '0.1.4'), 'Verdigit-0.1.4-linux-amd64.deb')
+    assert.equal(assetName('deb', 'arm64', '0.1.4'), 'Verdigit-0.1.4-linux-arm64.deb')
+    assert.equal(assetName('rpm', 'x64', '0.1.3'), 'Verdigit-0.1.3-linux-x86_64.rpm')
+    assert.equal(assetName('rpm', 'arm64', '0.1.3'), 'Verdigit-0.1.3-linux-aarch64.rpm')
+    assert.equal(assetName('pacman', 'x64', '1.0.0'), 'Verdigit-1.0.0-linux-x64.pacman')
+    assert.equal(assetName('pacman', 'arm64', '1.0.0'), 'Verdigit-1.0.0-linux-aarch64.pacman')
+    assert.equal(assetName('tar.gz', 'x64', '1.0.0'), 'Verdigit-1.0.0-linux-x64.tar.gz')
+    assert.equal(assetName('portable', 'x64', '0.1.2'), 'Verdigit-0.1.2-portable-x64.exe')
     assert.equal(assetName('portable', 'arm64', '1.0.0'), null)
     assert.equal(assetName('rpm', 'ia32', '1.0.0'), null)
     assert.equal(installCommand('rpm', '/home/u/Downloads/a b.rpm'), 'sudo dnf install "/home/u/Downloads/a b.rpm"')

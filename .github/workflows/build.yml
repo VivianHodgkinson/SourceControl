@@ -61,7 +61,7 @@ jobs:
         run: npx electron-builder ${{ matrix.args }} --publish never
       - uses: actions/upload-artifact@v7
         with:
-          name: SourceControl-${{ matrix.name }}
+          name: Verdigit-${{ matrix.name }}
           if-no-files-found: error
           # latest*.yml and .blockmap files are what installed copies use to auto-update.
           path: |
@@ -98,4 +98,4 @@ jobs:
             --draft \
             --verify-tag \
             --title "${GITHUB_REF_NAME#v}" \
-            --notes "SourceControl ${GITHUB_REF_NAME#v}"
+            --notes "Verdigit ${GITHUB_REF_NAME#v}"

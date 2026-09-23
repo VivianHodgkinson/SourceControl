@@ -1,4 +1,4 @@
-# SourceControl
+# Verdigit
 
 [![Support me on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-3ddc84?logo=kofi&logoColor=white)](https://ko-fi.com/iammrveee)
 
@@ -8,24 +8,24 @@ git does on your machine: same config, credential helpers, SSH keys and hooks.
 
 ## Install
 
-Download from the [Releases page](https://github.com/VivianHodgkinson/SourceControl/releases). Linux builds are available for x64 and ARM64; the Windows build is x64 and also runs on Windows on ARM through its built-in emulation.
+Download from the [Releases page](https://github.com/VivianHodgkinson/Verdigit/releases). Linux builds are available for x64 and ARM64; the Windows build is x64 and also runs on Windows on ARM through its built-in emulation.
 
 | Platform | File | Install |
 | --- | --- | --- |
-| Windows 10/11 | `SourceControl-<ver>-setup-x64.exe` | Run the installer. A `-portable-x64.exe` that needs no install is also provided. |
-| Ubuntu, Debian, Mint, Pop!_OS, elementary | `.deb` | `sudo apt install ./SourceControl-<ver>-linux-amd64.deb` |
-| Fedora, RHEL, Rocky, Alma, openSUSE | `.rpm` | `sudo dnf install ./SourceControl-<ver>-linux-x86_64.rpm` (openSUSE: `sudo zypper install ./…rpm`) |
-| Arch, Manjaro, EndeavourOS | `.pacman` | `sudo pacman -U ./SourceControl-<ver>-linux-x64.pacman` |
-| Any other distro | `.AppImage` | `chmod +x SourceControl-*.AppImage && ./SourceControl-*.AppImage` |
+| Windows 10/11 | `Verdigit-<ver>-setup-x64.exe` | Run the installer. A `-portable-x64.exe` that needs no install is also provided. |
+| Ubuntu, Debian, Mint, Pop!_OS, elementary | `.deb` | `sudo apt install ./Verdigit-<ver>-linux-amd64.deb` |
+| Fedora, RHEL, Rocky, Alma, openSUSE | `.rpm` | `sudo dnf install ./Verdigit-<ver>-linux-x86_64.rpm` (openSUSE: `sudo zypper install ./…rpm`) |
+| Arch, Manjaro, EndeavourOS | `.pacman` | `sudo pacman -U ./Verdigit-<ver>-linux-x64.pacman` |
+| Any other distro | `.AppImage` | `chmod +x Verdigit-*.AppImage && ./Verdigit-*.AppImage` |
 | Any other distro | `.tar.gz` | Extract and run `sourcecontrol` |
 
 **Which file?** Most PCs and laptops need the **x64** build, named `x86_64`, `amd64` or `x64` depending on the package. Only pick `arm64` or `aarch64` on an ARM machine (e.g. a Raspberry Pi or an ARM laptop running Linux). Not sure? Run `uname -m`.
 
-SourceControl needs Git. The Linux packages install it as a dependency. On Windows, install [Git for Windows](https://git-scm.com/download/win); the app tells you if Git is missing.
+Verdigit needs Git. The Linux packages install it as a dependency. On Windows, install [Git for Windows](https://git-scm.com/download/win); the app tells you if Git is missing.
 
 ## Updates
 
-SourceControl checks GitHub for new **published** releases on startup and every few hours (turn this off in Settings → Updates, or use *Check now*).
+Verdigit checks GitHub for new **published** releases on startup and every few hours (turn this off in Settings → Updates, or use *Check now*).
 
 - **Windows installer and AppImage** download the update in the background. A *Restart to update* button appears in the top bar, and the update also installs whenever you quit.
 - **Portable exe, .deb, .rpm, .pacman and .tar.gz** show a *vX available* button that opens the release page, so your package manager stays in charge.
@@ -126,4 +126,4 @@ Keyboard: `Ctrl+P` switch repository · `Ctrl+Tab` / `Ctrl+Shift+Tab` next / pre
 
 ## Support
 
-SourceControl is free and open source. If it saves you some time, you can [buy me a coffee on Ko-fi](https://ko-fi.com/iammrveee). It's appreciated, never expected.
+Verdigit is free and open source. If it saves you some time, you can [buy me a coffee on Ko-fi](https://ko-fi.com/iammrveee). It's appreciated, never expected.

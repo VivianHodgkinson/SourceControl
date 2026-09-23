@@ -23,7 +23,7 @@ import { assetName, installCommand, type InstallKind } from './updateAsset'
  * limited to 60 requests an hour per IP and shared by everyone behind that IP.
  */
 
-const REPO = 'VivianHodgkinson/SourceControl'
+const REPO = 'VivianHodgkinson/Verdigit'
 const CHECK_EVERY_MS = 4 * 60 * 60 * 1000
 
 let status: UpdateStatus
@@ -107,12 +107,23 @@ export async function checkForUpdates(): Promise<UpdateStatus> {
 
   set({ state: 'checking', error: undefined })
   try {
-    // github.com/<repo>/releases/latest redirects to /releases/tag/<tag> of the latest published release.
-    const res = await fetch(`https://github.com/${REPO}/releases/latest`, { method: 'HEAD', redirect: 'manual' })
-    const tag = /\/releases\/tag\/([^/?#]+)/.exec(res.headers.get('location') ?? '')?.[1]
+    // github.com/<repo>/releases/latest redirects to /releases/tag/<tag> of the latest published
+    // release. Follow other redirects on the way (a renamed repo redirects to its new name).
+    let url = `https://github.com/${REPO}/releases/latest`
+    let tag: string | undefined
+    for (let hop = 0; hop < 5 && !tag; hop++) {
+      const res = await fetch(url, { method: 'HEAD', redirect: 'manual' })
+      const location = res.headers.get('location')
+      if (res.status < 300 || res.status >= 400 || !location) {
+        if (res.status >= 400) throw new Error(`GitHub returned ${res.status}`)
+        break
+      }
+      tag = /\/releases\/tag\/([^/?#]+)/.exec(location)?.[1]
+      if (!tag && !/\/releases\/latest$/.test(new URL(location, url).pathname)) break // e.g. /releases: nothing published
+      url = new URL(location, url).toString()
+    }
     if (!tag) {
-      if (res.status >= 300 && res.status < 400) set({ state: 'up-to-date', lastChecked: Date.now() }) // no published release
-      else throw new Error(`GitHub returned ${res.status}`)
+      set({ state: 'up-to-date', lastChecked: Date.now() })
       return status
     }
     const latest = decodeURIComponent(tag).replace(/^v/, '')

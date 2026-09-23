@@ -53,7 +53,7 @@ export function Welcome({ settings, onOpen, onForget }: { settings: Settings; on
             <Icon name="logo" size={34} />
           </div>
           <div>
-            <h1>SourceControl</h1>
+            <h1>Verdigit</h1>
             <div className="tagline">A fast, focused Git client — with Git Flow built in.</div>
           </div>
         </div>

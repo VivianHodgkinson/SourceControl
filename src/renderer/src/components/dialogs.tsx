@@ -426,7 +426,7 @@ export function SettingsDialog({ settings, onSaved, done }: { settings: Settings
             Used to list your repositories, create pull requests, and authenticate HTTPS pushes to github.com. Needs the <span className="mono">repo</span> scope. Stored encrypted with your OS keychain.{' '}
             <a href="#" style={{ color: 'var(--accent)' }} onClick={(e) => {
               e.preventDefault()
-              api.openExternal('https://github.com/settings/tokens/new?scopes=repo&description=SourceControl')
+              api.openExternal('https://github.com/settings/tokens/new?scopes=repo&description=Verdigit')
             }}>Create a token</a>
           </div>
         </div>
