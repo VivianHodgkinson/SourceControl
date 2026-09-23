@@ -122,7 +122,7 @@ src/renderer/    React UI
 test/            backend integration tests
 ```
 
-Keyboard: `F5` refresh · `Ctrl+F` search · `↑/↓` move through commits · `Esc` close diff/blame/history · `F12` dev tools.
+Keyboard: `Ctrl+P` switch repository · `Ctrl+Tab` / `Ctrl+Shift+Tab` next / previous tab · `F5` refresh · `Ctrl+F` search · `↑/↓` move through commits · `Esc` close diff/blame/history · `F12` dev tools.
 
 ## Support
 

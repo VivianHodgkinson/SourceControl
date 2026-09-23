@@ -4,6 +4,7 @@ import { api, on } from './api'
 import { Console } from './components/Console'
 import { AskPassDialog, SettingsDialog } from './components/dialogs'
 import { Icon } from './components/Icon'
+import { RepoSwitcher } from './components/RepoSwitcher'
 import { RepoView } from './components/RepoView'
 import { UpdatePill, useUpdateStatus } from './components/Updates'
 import { Welcome } from './components/Welcome'
@@ -90,6 +91,37 @@ export function App() {
     setSettings(await api.saveSettings({ theme: next }))
   }
 
+  const switcherOpen = useRef(false)
+  const openSwitcher = async (): Promise<void> => {
+    if (!settings || switcherOpen.current) return
+    switcherOpen.current = true
+    const path = await ui.custom<string>((done) => <RepoSwitcher tabs={tabs} recent={settings.recentRepos} active={active} done={done} />)
+    switcherOpen.current = false
+    if (!path) return
+    if (tabs.includes(path)) setActive(path)
+    else openRepo(path)
+  }
+
+  // Ctrl+P: quick switcher. Ctrl+Tab / Ctrl+Shift+Tab: next / previous tab.
+  const keys = useRef({ openSwitcher, tabs, active })
+  keys.current = { openSwitcher, tabs, active }
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (!(e.ctrlKey || e.metaKey)) return
+      const { tabs, active, openSwitcher } = keys.current
+      if (e.key.toLowerCase() === 'p' && !e.shiftKey && !e.altKey) {
+        e.preventDefault()
+        openSwitcher()
+      } else if (e.key === 'Tab' && tabs.length > 1) {
+        e.preventDefault()
+        const i = active ? tabs.indexOf(active) : -1
+        setActive(tabs[(i + (e.shiftKey ? tabs.length - 1 : 1) + tabs.length) % tabs.length])
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   const openSettings = (): void => {
     if (!settings) return
     ui.custom<null>((done) => <SettingsDialog settings={settings} onSaved={setSettings} done={done} />)
@@ -151,6 +183,11 @@ export function App() {
         <div className={`tab new-tab${active === null ? ' active' : ''}`} title="Open a repository" onClick={() => setActive(null)}>
           <Icon name="plus" size={14} />
         </div>
+        {tabs.length > 1 && (
+          <div className="tab new-tab" title="Switch repository (Ctrl+P)" onClick={openSwitcher}>
+            <Icon name="search" size={14} />
+          </div>
+        )}
         <span className="spacer" />
         <div className="tab-actions">
           <UpdatePill status={update} />

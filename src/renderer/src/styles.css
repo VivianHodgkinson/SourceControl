@@ -1955,3 +1955,93 @@ button {
 .recent-item:hover .icon-btn {
   opacity: 1;
 }
+
+/* ------------------------------------------------------------ repo switcher (Ctrl+P) */
+
+.palette-overlay {
+  padding-top: 12vh;
+}
+.palette {
+  width: 620px;
+  max-width: calc(100vw - 40px);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-1);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: 0 24px 60px var(--shadow);
+  overflow: hidden;
+  animation: pop 0.12s ease-out;
+}
+.palette-input {
+  position: relative;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.palette-input .icon {
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-faint);
+}
+.palette-input .input {
+  padding-left: 36px;
+  height: 38px;
+  font-size: 14px;
+}
+.palette-list {
+  max-height: 50vh;
+  overflow: auto;
+  padding: 4px 0;
+}
+.palette-group {
+  padding: 8px 14px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.palette-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 34px;
+  padding: 0 14px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+}
+.palette-item .icon {
+  color: var(--text-faint);
+}
+.palette-item .name {
+  font-weight: 600;
+  flex: none;
+}
+.palette-item .path {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.palette-item.on {
+  background: var(--accent-soft);
+  border-left-color: var(--accent);
+}
+.palette-item.on .icon {
+  color: var(--accent);
+}
+.palette-empty {
+  padding: 18px 14px;
+  color: var(--text-faint);
+}
+.palette-foot {
+  display: flex;
+  gap: 14px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-0);
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
