@@ -165,12 +165,19 @@ export interface UpdateStatus {
   currentVersion: string
   /** auto: downloads and installs itself; notify: links to the release; disabled: dev build */
   mode: 'auto' | 'notify' | 'disabled'
-  state: 'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'up-to-date' | 'error'
+  /** ready: auto-update downloaded, restart to install; downloaded: package saved to Downloads for the user to install */
+  state: 'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'downloaded' | 'up-to-date' | 'error'
   version?: string
   progress?: number
   error?: string
   releaseUrl?: string
   lastChecked?: number
+  /** Release file matching this install (notify mode) */
+  assetName?: string
+  /** Where that file was downloaded */
+  file?: string
+  /** Paste-able command to install the downloaded package */
+  installCommand?: string
 }
 
 export type Theme = 'dark' | 'light' | 'system'

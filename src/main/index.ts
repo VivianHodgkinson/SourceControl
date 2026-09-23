@@ -11,7 +11,7 @@ import * as github from './github'
 import { findGit } from './gitpath'
 import { configureRunner, gitBinary, resetGitBinary, run } from './runner'
 import * as store from './store'
-import { checkForUpdates, getUpdateStatus, initUpdater, installUpdate } from './updater'
+import { checkForUpdates, getUpdateStatus, initUpdater, installUpdate, openReleasePage, showUpdateFile } from './updater'
 
 let win: BrowserWindow | null = null
 
@@ -197,7 +197,9 @@ const api: Api = {
   writeFile: async (repo, path, content) => writeFileSync(resolve(repo, path), content),
   getUpdateStatus: async () => getUpdateStatus(),
   checkForUpdates,
-  installUpdate: async () => installUpdate(),
+  installUpdate,
+  showUpdateFile: async () => showUpdateFile(),
+  openReleasePage: async () => openReleasePage(),
   getGlobalIdentity: async () => ({
     name: await git.getConfig(null, 'user.name'),
     email: await git.getConfig(null, 'user.email')

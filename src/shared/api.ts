@@ -44,6 +44,8 @@ export interface Api {
   getUpdateStatus(): Promise<UpdateStatus>
   checkForUpdates(): Promise<UpdateStatus>
   installUpdate(): Promise<void>
+  showUpdateFile(): Promise<void>
+  openReleasePage(): Promise<void>
   setGlobalIdentity(name: string, email: string): Promise<void>
 
   // repositories

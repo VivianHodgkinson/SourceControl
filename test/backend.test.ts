@@ -8,6 +8,7 @@ import * as git from '../src/main/git'
 import * as flow from '../src/main/gitflow'
 import { buildPatch, parseDiff, parseConflicts } from '../src/renderer/src/lib/diff'
 import { layoutGraph } from '../src/renderer/src/lib/graph'
+import { assetName, installCommand } from '../src/main/updateAsset'
 
 const sh = (cwd: string, cmd: string): string => execSync(cmd, { cwd, encoding: 'utf8', env: { ...process.env, GIT_AUTHOR_NAME: 'Test', GIT_AUTHOR_EMAIL: 't@x', GIT_COMMITTER_NAME: 'Test', GIT_COMMITTER_EMAIL: 't@x' } })
 process.env.GIT_AUTHOR_NAME = 'Test'
@@ -302,6 +303,25 @@ async function main(): Promise<void> {
     assert.equal(g.rows[3].incoming.length, 1)
     assert.deepEqual(g.rows[2].shift, [{ from: 1, lane: 0, color: 1 }])
     assert.equal(g.width, 2)
+  })
+
+  await test('update asset names match published release files', async () => {
+    // Names as published in real releases (v0.1.3 / v0.1.4).
+    assert.equal(assetName('deb', 'x64', '0.1.4'), 'SourceControl-0.1.4-linux-amd64.deb')
+    assert.equal(assetName('deb', 'arm64', '0.1.4'), 'SourceControl-0.1.4-linux-arm64.deb')
+    assert.equal(assetName('rpm', 'x64', '0.1.3'), 'SourceControl-0.1.3-linux-x86_64.rpm')
+    assert.equal(assetName('rpm', 'arm64', '0.1.3'), 'SourceControl-0.1.3-linux-aarch64.rpm')
+    assert.equal(assetName('pacman', 'x64', '1.0.0'), 'SourceControl-1.0.0-linux-x64.pacman')
+    assert.equal(assetName('pacman', 'arm64', '1.0.0'), 'SourceControl-1.0.0-linux-aarch64.pacman')
+    assert.equal(assetName('tar.gz', 'x64', '1.0.0'), 'SourceControl-1.0.0-linux-x64.tar.gz')
+    assert.equal(assetName('portable', 'x64', '0.1.2'), 'SourceControl-0.1.2-portable-x64.exe')
+    assert.equal(assetName('portable', 'arm64', '1.0.0'), null)
+    assert.equal(assetName('rpm', 'ia32', '1.0.0'), null)
+    assert.equal(installCommand('rpm', '/home/u/Downloads/a b.rpm'), 'sudo dnf install "/home/u/Downloads/a b.rpm"')
+    assert.equal(installCommand('rpm', '/x.rpm', { zypper: true }), 'sudo zypper install "/x.rpm"')
+    assert.equal(installCommand('deb', '/x.deb'), 'sudo apt install "/x.deb"')
+    assert.equal(installCommand('pacman', '/x.pacman'), 'sudo pacman -U "/x.pacman"')
+    assert.equal(installCommand('portable', '/x.exe'), null)
   })
 
   console.log(`\n${passed} passed${process.exitCode ? ', some FAILED' : ''}`)
