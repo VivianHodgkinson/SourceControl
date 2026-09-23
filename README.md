@@ -19,6 +19,8 @@ Download from the [Releases page](https://github.com/VivianHodgkinson/SourceCont
 | Any other distro | `.AppImage` | `chmod +x SourceControl-*.AppImage && ./SourceControl-*.AppImage` |
 | Any other distro | `.tar.gz` | Extract and run `sourcecontrol` |
 
+**Which file?** Most PCs and laptops need the **x64** build, named `x86_64`, `amd64` or `x64` depending on the package. Only pick `arm64` or `aarch64` on an ARM machine (e.g. a Raspberry Pi or an ARM laptop running Linux). Not sure? Run `uname -m`.
+
 SourceControl needs Git. The Linux packages install it as a dependency. On Windows, install [Git for Windows](https://git-scm.com/download/win); the app tells you if Git is missing.
 
 ## Updates
