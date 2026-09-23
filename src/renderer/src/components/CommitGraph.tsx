@@ -24,20 +24,38 @@ export function CommitGraph({ search }: { search: string }) {
   }, [commits, changes, state?.headSha])
 
   const layout = useMemo(() => layoutGraph(items), [items])
-  const graphW = PAD * 2 + Math.min(layout.width, MAX_LANES) * LANE_W
-  const cols = `190px ${graphW}px minmax(200px, 1fr) 150px 110px 76px`
+  const graphW = Math.max(64, PAD * 2 + Math.min(layout.width, MAX_LANES) * LANE_W)
 
   const bodyRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [height, setHeight] = useState(800)
+  const [width, setWidth] = useState(1200)
 
   useLayoutEffect(() => {
     const el = bodyRef.current
     if (!el) return
-    const ro = new ResizeObserver(() => setHeight(el.clientHeight))
+    const ro = new ResizeObserver(() => {
+      setHeight(el.clientHeight)
+      setWidth(el.clientWidth)
+    })
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
+
+  // Drop the SHA, then the author column when space is tight, so the message keeps room.
+  const AUTHOR_W = 140
+  const DATE_W = 100
+  const SHA_W = 72
+  const REFS_W = width >= 170 + graphW + 220 + DATE_W ? 170 : 120
+  const base = REFS_W + graphW + 220 + DATE_W
+  const showAuthor = width >= base + AUTHOR_W
+  const showSha = width >= base + AUTHOR_W + SHA_W
+  const showDate = width >= REFS_W + graphW + 80 + DATE_W
+  // In very narrow windows let the message shrink rather than scroll sideways.
+  const msgMin = Math.max(80, Math.min(220, width - REFS_W - graphW - (showDate ? DATE_W : 0)))
+  const cols = [`${REFS_W}px`, `${graphW}px`, `minmax(${msgMin}px, 1fr)`, showAuthor && `${AUTHOR_W}px`, showDate && `${DATE_W}px`, showSha && `${SHA_W}px`]
+    .filter(Boolean)
+    .join(' ')
 
   const indexOf = useMemo(() => new Map(items.map((c, i) => [c.hash, i])), [items])
 
@@ -120,9 +138,9 @@ export function CommitGraph({ search }: { search: string }) {
         <div>Branch / Tag</div>
         <div>Graph</div>
         <div>Commit message</div>
-        <div>Author</div>
-        <div>Date</div>
-        <div>SHA</div>
+        {showAuthor && <div>Author</div>}
+        {showDate && <div>Date</div>}
+        {showSha && <div>SHA</div>}
       </div>
       <div className="graph-body" ref={bodyRef} onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}>
         <div style={{ height: items.length * ROW_H + (ctx.hasMore ? 50 : 0), position: 'relative' }}>
@@ -155,11 +173,11 @@ export function CommitGraph({ search }: { search: string }) {
                     // Work in progress · {changes} changed file{changes === 1 ? '' : 's'}
                   </div>
                 ) : (
-                  <div className="msg" title={c.subject}>{c.subject}</div>
+                  <div className="msg" title={`${c.subject}\n${c.author} · ${relTime(c.date)} · ${short(c.hash)}`}>{c.subject}</div>
                 )}
-                <div className="author" title={isWip ? '' : `${c.author} <${c.email}>`}>{c.author}</div>
-                <div className="date" title={isWip ? '' : fullDate(c.date)}>{isWip ? '' : relTime(c.date)}</div>
-                <div className="sha">{isWip ? '' : short(c.hash)}</div>
+                {showAuthor && <div className="author" title={isWip ? '' : `${c.author} <${c.email}>`}>{c.author}</div>}
+                {showDate && <div className="date" title={isWip ? '' : fullDate(c.date)}>{isWip ? '' : relTime(c.date)}</div>}
+                {showSha && <div className="sha">{isWip ? '' : short(c.hash)}</div>}
               </div>
             )
           })}
