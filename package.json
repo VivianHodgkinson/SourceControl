@@ -1,6 +1,6 @@
 {
   "name": "sourcecontrol",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A dark & green desktop Git client with built-in Git Flow",
   "main": "out/main/index.js",
   "scripts": {
