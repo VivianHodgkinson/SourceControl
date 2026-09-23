@@ -1,5 +1,7 @@
 # SourceControl
 
+[![Support me on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20me-3ddc84?logo=kofi&logoColor=white)](https://ko-fi.com/iammrveee)
+
 A dark & green desktop Git client in the spirit of GitKraken and Sourcetree, with Git Flow built in.
 Built with Electron, React and TypeScript on top of the `git` command line, so it behaves exactly like
 git does on your machine: same config, credential helpers, SSH keys and hooks.
@@ -119,3 +121,7 @@ test/            backend integration tests
 ```
 
 Keyboard: `F5` refresh · `Ctrl+F` search · `↑/↓` move through commits · `Esc` close diff/blame/history · `F12` dev tools.
+
+## Support
+
+SourceControl is free and open source. If it saves you some time, you can [buy me a coffee on Ko-fi](https://ko-fi.com/iammrveee). It's appreciated, never expected.

@@ -4,7 +4,10 @@ on:
   push:
     branches: [main]
     tags: ['v*']
+    # Docs-only commits don't need a full build (tag pushes always build).
+    paths-ignore: ['**.md', '.github/FUNDING.yml']
   pull_request:
+    paths-ignore: ['**.md', '.github/FUNDING.yml']
   workflow_dispatch:
 
 permissions:
