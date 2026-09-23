@@ -27,6 +27,9 @@ export interface Api {
   getSettings(): Promise<Settings>
   saveSettings(patch: Partial<Settings>): Promise<Settings>
   pickDirectory(title: string): Promise<string | null>
+  pickFile(title: string): Promise<string | null>
+  /** The git executable in use and its version, or null if git can't be found */
+  gitInfo(): Promise<{ path: string; version: string } | null>
   watchRepo(repo: string): Promise<void>
   unwatchRepo(repo: string): Promise<void>
   openPath(path: string): Promise<void>

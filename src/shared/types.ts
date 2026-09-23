@@ -156,6 +156,8 @@ export interface Settings {
   hasGitHubToken: boolean
   pullMode: 'merge' | 'rebase' | 'ff-only'
   theme: Theme
+  /** Explicit git executable; null means auto-detect */
+  gitPath: string | null
 }
 
 export type Theme = 'dark' | 'light' | 'system'

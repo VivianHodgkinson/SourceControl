@@ -8,7 +8,8 @@ import { startAskPass, stopAskPass } from './askpass'
 import * as git from './git'
 import * as flow from './gitflow'
 import * as github from './github'
-import { configureRunner } from './runner'
+import { findGit } from './gitpath'
+import { configureRunner, gitBinary, resetGitBinary, run } from './runner'
 import * as store from './store'
 
 let win: BrowserWindow | null = null
@@ -157,11 +158,27 @@ const api: Api = {
   getSettings: async () => store.getSettings(),
   saveSettings: async (patch) => {
     if (patch.theme) nativeTheme.themeSource = patch.theme
-    return store.saveSettings(patch)
+    const saved = store.saveSettings(patch)
+    if ('gitPath' in patch) resetGitBinary()
+    return saved
   },
   pickDirectory: async (title) => {
     const r = await dialog.showOpenDialog(win!, { title, properties: ['openDirectory', 'createDirectory'] })
     return r.canceled ? null : r.filePaths[0]
+  },
+  pickFile: async (title) => {
+    const r = await dialog.showOpenDialog(win!, {
+      title,
+      properties: ['openFile'],
+      ...(process.platform === 'win32' ? { filters: [{ name: 'Programs', extensions: ['exe'] }] } : {})
+    })
+    return r.canceled ? null : r.filePaths[0]
+  },
+  gitInfo: async () => {
+    const bin = gitBinary()
+    if (!bin) return null
+    const version = (await run(process.cwd(), ['--version'], { quiet: true })).trim()
+    return { path: bin, version }
   },
   watchRepo,
   unwatchRepo: async (repo) => unwatchRepo(repo),
@@ -321,7 +338,7 @@ app.whenReady().then(async () => {
   Menu.setApplicationMenu(null)
   nativeTheme.themeSource = store.getSettings().theme
   const env = await startAskPass(askPass)
-  configureRunner(env, (entry) => send('git:log', entry))
+  configureRunner(env, (entry) => send('git:log', entry), () => findGit(store.getSettings().gitPath))
   createWindow()
   checkGitInstalled()
   app.on('activate', () => {
@@ -331,19 +348,14 @@ app.whenReady().then(async () => {
 
 /** git is the one external requirement; explain how to get it if it's missing. */
 async function checkGitInstalled(): Promise<void> {
-  const ok = await new Promise<boolean>((done) => {
-    const p = spawn('git', ['--version'], { windowsHide: true })
-    p.once('error', () => done(false))
-    p.once('close', (code) => done(code === 0))
-  })
-  if (ok || !win) return
+  if (gitBinary() || !win) return
   const windows = process.platform === 'win32'
   const { response } = await dialog.showMessageBox(win, {
     type: 'warning',
     title: 'Git not found',
     message: 'SourceControl needs Git, but it could not be found.',
     detail: windows
-      ? 'Install Git for Windows, then restart SourceControl.'
+      ? 'Install Git for Windows (the default options are fine). SourceControl picks it up automatically, or you can point to git.exe in Settings → Git executable.'
       : process.platform === 'darwin'
         ? 'Install Git (for example with `xcode-select --install` or Homebrew), then restart SourceControl.'
         : 'Install git with your package manager (e.g. `sudo apt install git`, `sudo dnf install git`, `sudo pacman -S git`), then restart SourceControl.',

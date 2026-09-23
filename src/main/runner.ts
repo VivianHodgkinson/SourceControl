@@ -30,10 +30,30 @@ export class GitError extends Error {
 let baseEnv: Record<string, string> = {}
 let logSink: (entry: LogEntry) => void = () => {}
 let nextId = 1
+let locate: () => string | null = () => 'git'
+let binary: string | null = null
 
-export function configureRunner(env: Record<string, string>, sink: (entry: LogEntry) => void): void {
+export const GIT_MISSING =
+  process.platform === 'win32'
+    ? 'Git was not found. Install Git for Windows from https://git-scm.com/download/win, or set its location in Settings → Git executable.'
+    : 'Git was not found. Install git with your package manager, or set its location in Settings → Git executable.'
+
+export function configureRunner(env: Record<string, string>, sink: (entry: LogEntry) => void, findGit: () => string | null): void {
   baseEnv = env
   logSink = sink
+  locate = findGit
+  binary = null
+}
+
+/** The git executable in use, looking it up again if it wasn't found before (e.g. git installed while the app runs). */
+export function gitBinary(): string | null {
+  binary ??= locate()
+  return binary
+}
+
+/** Forget the cached executable, e.g. after the configured path changes. */
+export function resetGitBinary(): void {
+  binary = null
 }
 
 /** Run `git <args>` in `cwd`. Output is decoded as UTF-8. */
@@ -41,7 +61,12 @@ export function git(cwd: string, args: string[], opts: RunOptions = {}): Promise
   const start = Date.now()
   const fullArgs = ['-c', 'core.quotepath=false', '-c', 'color.ui=false', ...args]
   return new Promise((resolve, reject) => {
-    const child = spawn('git', fullArgs, {
+    const bin = gitBinary()
+    if (!bin) {
+      reject(new GitError(GIT_MISSING, null, ''))
+      return
+    }
+    const child = spawn(bin, fullArgs, {
       cwd,
       env: {
         ...process.env,
@@ -62,7 +87,12 @@ export function git(cwd: string, args: string[], opts: RunOptions = {}): Promise
       err.push(d)
       opts.onStderr?.(d.toString('utf8'))
     })
-    child.on('error', (e) => reject(new GitError(`Failed to run git: ${e.message}`, null, '')))
+    child.on('error', (e: NodeJS.ErrnoException) => {
+      if (e.code === 'ENOENT') {
+        resetGitBinary()
+        reject(new GitError(GIT_MISSING, null, ''))
+      } else reject(new GitError(`Failed to run git: ${e.message}`, null, ''))
+    })
     child.on('close', (code) => {
       const stdout = Buffer.concat(out).toString('utf8')
       const stderr = Buffer.concat(err).toString('utf8')
