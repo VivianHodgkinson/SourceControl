@@ -79,7 +79,7 @@
       "artifactName": "${productName}-${version}-portable-${arch}.${ext}"
     },
     "linux": {
-      "icon": "resources/icon.png",
+      "icon": "resources/icons",
       "category": "Development",
       "synopsis": "Git client with Git Flow built in",
       "description": "A dark & green desktop Git client with a commit graph, line staging, conflict resolution, interactive rebase and native Git Flow.",
