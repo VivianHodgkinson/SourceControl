@@ -21,7 +21,8 @@ function load(): StoredSettings {
     cloneDir: join(homedir(), 'dev'),
     gitHubUser: null,
     gitHubToken: null,
-    pullMode: 'merge'
+    pullMode: 'merge',
+    theme: 'dark'
   }
   try {
     if (existsSync(file())) cache = { ...defaults, ...JSON.parse(readFileSync(file(), 'utf8')) }

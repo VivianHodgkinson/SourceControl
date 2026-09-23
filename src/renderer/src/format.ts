@@ -1,10 +1,7 @@
 import type { ChangeType } from '@shared/types'
 
-export const LANE_COLORS = [
-  '#3ddc84', '#22d3ee', '#a3e635', '#f5c451', '#c084fc', '#fb7185', '#60a5fa', '#fb923c', '#2dd4bf', '#e879f9', '#facc15', '#4ade80'
-]
-
-export const laneColor = (i: number): string => LANE_COLORS[i % LANE_COLORS.length]
+/** Graph lane colour as a CSS variable, so it follows the theme (palettes live in styles.css). */
+export const laneColor = (i: number): string => `var(--lane-${i % 12})`
 
 export function relTime(sec: number): string {
   const d = Date.now() / 1000 - sec

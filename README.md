@@ -57,6 +57,7 @@ Requires `git` on your `PATH`. The `git-flow` extension is **not** needed.
 - The token also authenticates HTTPS pushes to github.com. It's stored encrypted with your OS keychain.
 
 **Other**
+- Dark, light, or follow-the-system theme: switch in Settings → Appearance, or with the sun/moon button in the top bar.
 - Multiple repositories in tabs, recent repositories, auto-refresh when the repo changes.
 - Stashes (save with untracked / keep-index, apply, pop, drop, inspect files).
 - Git console showing every command the app runs (bottom-right of the status bar).

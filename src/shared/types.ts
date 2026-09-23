@@ -155,7 +155,10 @@ export interface Settings {
   gitHubUser: string | null
   hasGitHubToken: boolean
   pullMode: 'merge' | 'rebase' | 'ff-only'
+  theme: Theme
 }
+
+export type Theme = 'dark' | 'light' | 'system'
 
 export type RebaseAction = 'pick' | 'reword' | 'squash' | 'fixup' | 'drop'
 

@@ -7,6 +7,7 @@ import { Icon } from './components/Icon'
 import { RepoView } from './components/RepoView'
 import { Welcome } from './components/Welcome'
 import { baseName } from './format'
+import { resolveTheme, useTheme } from './theme'
 import { useUI } from './ui'
 
 export function App() {
@@ -16,6 +17,7 @@ export function App() {
   const [active, setActive] = useState<string | null>(null)
   const [log, setLog] = useState<LogEntry[]>([])
   const [consoleOpen, setConsoleOpen] = useState(false)
+  useTheme(settings?.theme)
 
   // Load settings and restore open tabs that still exist.
   useEffect(() => {
@@ -73,6 +75,13 @@ export function App() {
     setSettings(await api.saveSettings({ recentRepos: settings.recentRepos.filter((r) => r !== path) }))
   }
 
+  const toggleTheme = async (): Promise<void> => {
+    if (!settings) return
+    const next = resolveTheme(settings.theme) === 'dark' ? 'light' : 'dark'
+    setSettings({ ...settings, theme: next })
+    setSettings(await api.saveSettings({ theme: next }))
+  }
+
   const openSettings = (): void => {
     if (!settings) return
     ui.custom<null>((done) => <SettingsDialog settings={settings} onSaved={setSettings} done={done} />)
@@ -127,6 +136,13 @@ export function App() {
         </div>
         <span className="spacer" />
         <div className="tab-actions">
+          <button
+            className="icon-btn"
+            title={resolveTheme(settings.theme) === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            onClick={toggleTheme}
+          >
+            <Icon name={resolveTheme(settings.theme) === 'dark' ? 'sun' : 'moon'} size={16} />
+          </button>
           <button className="icon-btn" title="Settings" onClick={openSettings}>
             <Icon name="settings" size={16} />
           </button>

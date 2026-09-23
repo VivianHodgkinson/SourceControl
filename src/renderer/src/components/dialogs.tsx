@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Commit, GitHubRepo, RebaseAction, RebaseTodo, Settings } from '@shared/types'
+import type { Commit, GitHubRepo, RebaseAction, RebaseTodo, Settings, Theme } from '@shared/types'
 import { api, on } from '../api'
 import { relTime, repoNameFromUrl, short } from '../format'
 import { Dialog, useUI } from '../ui'
@@ -325,6 +325,13 @@ export function SettingsDialog({ settings, onSaved, done }: { settings: Settings
     })
   }, [])
 
+  // Theme applies immediately so you can preview it.
+  const setTheme = async (theme: Theme): Promise<void> => {
+    const next = await api.saveSettings({ theme })
+    setS(next)
+    onSaved(next)
+  }
+
   const save = async (): Promise<void> => {
     setSaving(true)
     try {
@@ -362,7 +369,24 @@ export function SettingsDialog({ settings, onSaved, done }: { settings: Settings
         </>
       }
     >
-      <h4 className="faint" style={{ margin: '4px 0 0', fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase' }}>Git identity (global)</h4>
+      <h4 className="faint" style={{ margin: '4px 0 0', fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase' }}>Appearance</h4>
+      <div className="seg">
+        {(
+          [
+            ['dark', 'Dark', 'moon'],
+            ['light', 'Light', 'sun'],
+            ['system', 'System', 'monitor']
+          ] as const
+        ).map(([value, label, icon]) => (
+          <button key={value} className={s.theme === value ? 'on' : ''} onClick={() => setTheme(value)}>
+            <span className="row" style={{ justifyContent: 'center', gap: 6 }}>
+              <Icon name={icon} size={14} /> {label}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <h4 className="faint" style={{ margin: '8px 0 0', fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase' }}>Git identity (global)</h4>
       <div className="field-row">
         <div className="field grow">
           <label>Name</label>

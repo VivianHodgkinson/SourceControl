@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, shell } from 'electron'
 import { spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, watch, writeFileSync, type FSWatcher } from 'node:fs'
 import { join, resolve } from 'node:path'
@@ -20,7 +20,7 @@ function createWindow(): void {
     minWidth: 960,
     minHeight: 600,
     show: false,
-    backgroundColor: '#0b100e',
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#080c0a' : '#ffffff',
     title: 'SourceControl',
     autoHideMenuBar: true,
     webPreferences: {
@@ -128,7 +128,10 @@ function requireToken(): string {
 
 const api: Api = {
   getSettings: async () => store.getSettings(),
-  saveSettings: async (patch) => store.saveSettings(patch),
+  saveSettings: async (patch) => {
+    if (patch.theme) nativeTheme.themeSource = patch.theme
+    return store.saveSettings(patch)
+  },
   pickDirectory: async (title) => {
     const r = await dialog.showOpenDialog(win!, { title, properties: ['openDirectory', 'createDirectory'] })
     return r.canceled ? null : r.filePaths[0]
@@ -289,6 +292,7 @@ async function askPass(prompt: string): Promise<string | null> {
 
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(null)
+  nativeTheme.themeSource = store.getSettings().theme
   const env = await startAskPass(askPass)
   configureRunner(env, (entry) => send('git:log', entry))
   createWindow()

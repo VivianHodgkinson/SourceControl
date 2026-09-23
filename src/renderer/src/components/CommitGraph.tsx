@@ -260,40 +260,40 @@ const GraphCell = memo(function GraphCell({
     <svg width={width} height={ROW_H}>
       <g fill="none" strokeWidth={2} strokeLinecap="round">
         {row.pass.map((p) => (
-          <line key={`p${p.lane}`} x1={x(p.lane)} y1={0} x2={x(p.lane)} y2={ROW_H} stroke={laneColor(p.color)} />
+          <line key={`p${p.lane}`} x1={x(p.lane)} y1={0} x2={x(p.lane)} y2={ROW_H} style={{ stroke: laneColor(p.color) }} />
         ))}
         {row.shift.map((p) => (
           <path
             key={`s${p.from}`}
             d={`M ${x(p.from)} 0 C ${x(p.from)} ${cy}, ${x(p.lane)} ${cy}, ${x(p.lane)} ${ROW_H}`}
-            stroke={laneColor(p.color)}
+            style={{ stroke: laneColor(p.color) }}
           />
         ))}
         {row.incoming.map((p) => (
           <path
             key={`i${p.lane}`}
             d={p.lane === row.col ? `M ${cx} 0 L ${cx} ${cy}` : `M ${x(p.lane)} 0 Q ${x(p.lane)} ${cy} ${cx} ${cy}`}
-            stroke={laneColor(p.color)}
+            style={{ stroke: laneColor(p.color) }}
           />
         ))}
         {row.outgoing.map((p) => (
           <path
             key={`o${p.lane}`}
             d={p.lane === row.col ? `M ${cx} ${cy} L ${cx} ${ROW_H}` : `M ${cx} ${cy} Q ${x(p.lane)} ${cy} ${x(p.lane)} ${ROW_H}`}
-            stroke={laneColor(p.color)}
+            style={{ stroke: laneColor(p.color) }}
             strokeDasharray={wip ? '3 3' : undefined}
           />
         ))}
       </g>
       {wip ? (
-        <circle cx={cx} cy={cy} r={7} fill="var(--bg-1)" stroke={color} strokeWidth={2} strokeDasharray="3 2" />
+        <circle cx={cx} cy={cy} r={7} style={{ fill: 'var(--bg-1)', stroke: color }} strokeWidth={2} strokeDasharray="3 2" />
       ) : merge ? (
-        <circle cx={cx} cy={cy} r={5} fill="var(--bg-1)" stroke={color} strokeWidth={2.5} />
+        <circle cx={cx} cy={cy} r={5} style={{ fill: 'var(--bg-1)', stroke: color }} strokeWidth={2.5} />
       ) : (
         <>
-          {head && <circle cx={cx} cy={cy} r={12} fill="none" stroke={color} strokeWidth={1.5} opacity={0.6} />}
-          <circle cx={cx} cy={cy} r={9} fill={color} />
-          <text x={cx} y={cy + 3.2} textAnchor="middle" fontSize={8.5} fontWeight={700} fill="#04140b" style={{ fontFamily: 'var(--font)' }}>
+          {head && <circle cx={cx} cy={cy} r={12} fill="none" style={{ stroke: color }} strokeWidth={1.5} opacity={0.6} />}
+          <circle cx={cx} cy={cy} r={9} style={{ fill: color }} />
+          <text x={cx} y={cy + 3.2} textAnchor="middle" fontSize={8.5} fontWeight={700} style={{ fill: 'var(--node-ink)', fontFamily: 'var(--font)' }}>
             {label}
           </text>
         </>
