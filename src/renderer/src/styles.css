@@ -373,16 +373,49 @@ button {
 .tabs .brand span {
   color: var(--text);
 }
+.tab-strip {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.tab-strip::-webkit-scrollbar {
+  height: 3px;
+}
+.tab-strip::-webkit-scrollbar-button {
+  display: none;
+}
+.tab-strip::-webkit-scrollbar-thumb {
+  border: none;
+  border-radius: 0;
+  background: var(--border-strong);
+}
+.tab-strip:hover::-webkit-scrollbar-thumb {
+  background: var(--accent);
+}
 .tab {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 0 8px 0 14px;
+  flex: 0 1 220px;
+  min-width: 150px;
   max-width: 220px;
   color: var(--text-dim);
   border-right: 1px solid var(--border);
   cursor: pointer;
   position: relative;
+}
+.tab.new-tab {
+  flex: none;
+  min-width: 0;
+  padding: 0 14px;
+}
+.tabs .brand,
+.tabs .tab-actions {
+  flex: none;
 }
 .tab:first-of-type {
   border-left: 1px solid var(--border);

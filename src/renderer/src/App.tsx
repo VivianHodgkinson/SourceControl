@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { AskPassRequest, LogEntry, Settings } from '@shared/types'
 import { api, on } from './api'
 import { Console } from './components/Console'
@@ -20,6 +20,12 @@ export function App() {
   const [consoleOpen, setConsoleOpen] = useState(false)
   useTheme(settings?.theme)
   const update = useUpdateStatus()
+  const stripRef = useRef<HTMLDivElement>(null)
+
+  // Keep the active tab visible when switching repos or opening a new one.
+  useEffect(() => {
+    stripRef.current?.querySelector('.tab.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [active, tabs.length])
 
   // Load settings and restore open tabs that still exist.
   useEffect(() => {
@@ -112,28 +118,37 @@ export function App() {
           <Icon name="logo" size={18} />
           <span>SourceControl</span>
         </div>
-        {tabs.map((t) => (
-          <div
-            key={t}
-            className={`tab${t === active ? ' active' : ''}`}
-            title={t}
-            onClick={() => setActive(t)}
-            onAuxClick={(e) => e.button === 1 && closeTab(t)}
-          >
-            <Icon name="repo" size={13} />
-            <span className="ellipsis">{baseName(t)}</span>
-            <button
-              className="icon-btn"
-              onClick={(e) => {
-                e.stopPropagation()
-                closeTab(t)
-              }}
+        <div
+          className="tab-strip"
+          ref={stripRef}
+          onWheel={(e) => {
+            // Most mice only scroll vertically; turn that into sideways scrolling here.
+            if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) e.currentTarget.scrollLeft += e.deltaY
+          }}
+        >
+          {tabs.map((t) => (
+            <div
+              key={t}
+              className={`tab${t === active ? ' active' : ''}`}
+              title={t}
+              onClick={() => setActive(t)}
+              onAuxClick={(e) => e.button === 1 && closeTab(t)}
             >
-              <Icon name="x" size={12} />
-            </button>
-          </div>
-        ))}
-        <div className={`tab${active === null ? ' active' : ''}`} title="Open a repository" onClick={() => setActive(null)} style={{ paddingRight: 14 }}>
+              <Icon name="repo" size={13} />
+              <span className="ellipsis">{baseName(t)}</span>
+              <button
+                className="icon-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  closeTab(t)
+                }}
+              >
+                <Icon name="x" size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className={`tab new-tab${active === null ? ' active' : ''}`} title="Open a repository" onClick={() => setActive(null)}>
           <Icon name="plus" size={14} />
         </div>
         <span className="spacer" />
