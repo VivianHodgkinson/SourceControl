@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import type { LogEntry } from '@shared/types'
 
 export interface RunOptions {
@@ -38,6 +39,9 @@ export const GIT_MISSING =
     ? 'Git was not found. Install Git for Windows from https://git-scm.com/download/win, or set its location in Settings → Git executable.'
     : 'Git was not found. Install git with your package manager, or set its location in Settings → Git executable.'
 
+/** Prefix of the error for a repo folder that has been moved or deleted (the UI matches on it). */
+export const FOLDER_MISSING = 'Folder not found'
+
 export function configureRunner(env: Record<string, string>, sink: (entry: LogEntry) => void, findGit: () => string | null): void {
   baseEnv = env
   logSink = sink
@@ -61,6 +65,12 @@ export function git(cwd: string, args: string[], opts: RunOptions = {}): Promise
   const start = Date.now()
   const fullArgs = ['-c', 'core.quotepath=false', '-c', 'color.ui=false', ...args]
   return new Promise((resolve, reject) => {
+    // A missing working directory makes spawn fail with ENOENT, which looks exactly
+    // like git itself being missing, so check the folder first.
+    if (!existsSync(cwd)) {
+      reject(new GitError(`${FOLDER_MISSING}: ${cwd}. It may have been moved or deleted.`, null, ''))
+      return
+    }
     const bin = gitBinary()
     if (!bin) {
       reject(new GitError(GIT_MISSING, null, ''))

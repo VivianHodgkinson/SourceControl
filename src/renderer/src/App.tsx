@@ -79,6 +79,19 @@ export function App() {
     })
   }
 
+  /** Point a tab whose folder moved at its new location. */
+  const relocate = async (oldPath: string): Promise<void> => {
+    const dir = await api.pickDirectory('Where is this repository now?')
+    if (!dir) return
+    if (!(await api.isRepo(dir))) return ui.toast(`${dir} isn't a Git repository.`, 'error')
+    const root = (await api.repoState(dir)).path
+    api.unwatchRepo(oldPath).catch(() => {})
+    setTabs((t) => (t.includes(root) ? t.filter((x) => x !== oldPath) : t.map((x) => (x === oldPath ? root : x))))
+    setActive(root)
+    const s = await api.getSettings()
+    setSettings(await api.saveSettings({ recentRepos: [root, ...s.recentRepos.filter((r) => r !== root && r !== oldPath)] }))
+  }
+
   const forget = async (path: string): Promise<void> => {
     if (!settings) return
     setSettings(await api.saveSettings({ recentRepos: settings.recentRepos.filter((r) => r !== path) }))
@@ -205,7 +218,7 @@ export function App() {
       </div>
 
       {active ? (
-        <RepoView key={active} path={active} settings={settings} footer={footer} />
+        <RepoView key={active} path={active} settings={settings} footer={footer} onClose={() => closeTab(active)} onRelocate={() => relocate(active)} />
       ) : (
         <>
           <Welcome settings={settings} onOpen={openRepo} onForget={forget} />

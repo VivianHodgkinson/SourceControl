@@ -47,6 +47,8 @@ export interface RepoCtx {
   path: string
   data: RepoData
   loaded: boolean
+  /** The repo folder no longer exists (moved or deleted) */
+  missing: boolean
   settings: Settings
   ui: UI
   selection: Selection
@@ -88,6 +90,7 @@ export function useRepoController(path: string, settings: Settings): RepoCtx {
     flow: null
   })
   const [loaded, setLoaded] = useState(false)
+  const [missing, setMissing] = useState(false)
   const [selection, setSelection] = useState<Selection>(null)
   const [view, setView] = useState<CenterView>({ kind: 'graph' })
   const [busy, setBusy] = useState<string | null>(null)
@@ -113,8 +116,13 @@ export function useRepoController(path: string, settings: Settings): RepoCtx {
       if (gen !== generation.current) return
       setData({ state, commits, branches, tags, stashes, remotes, status, flow })
       setLoaded(true)
+      setMissing(false)
     } catch (e) {
-      if (gen === generation.current) ui.toast(`Failed to read repository: ${(e as Error).message}`, 'error')
+      if (gen !== generation.current) return
+      const message = (e as Error).message
+      // A moved/deleted folder gets its own screen instead of an error toast on every refresh.
+      if (message.startsWith('Folder not found')) setMissing(true)
+      else ui.toast(`Failed to read repository: ${message}`, 'error')
     }
   }, [path, ui])
 
@@ -176,6 +184,7 @@ export function useRepoController(path: string, settings: Settings): RepoCtx {
       path,
       data,
       loaded,
+      missing,
       settings,
       ui,
       selection,
@@ -190,6 +199,6 @@ export function useRepoController(path: string, settings: Settings): RepoCtx {
       hasMore: data.commits.length >= limit,
       loadMore: () => setLimit((l) => l + PAGE)
     }),
-    [path, data, loaded, settings, ui, selection, view, focusHash, focus, busy, run, refresh, limit]
+    [path, data, loaded, missing, settings, ui, selection, view, focusHash, focus, busy, run, refresh, limit]
   )
 }

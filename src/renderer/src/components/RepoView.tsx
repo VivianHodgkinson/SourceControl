@@ -37,11 +37,43 @@ function usePersistentWidth(key: string, initial: number, min: number, max: numb
   return [w, (e) => start(e, key.endsWith('right')), dragging]
 }
 
-export function RepoView({ path, settings, footer }: { path: string; settings: Settings; footer: (info: ReactNode) => ReactNode }) {
+export function RepoView({
+  path,
+  settings,
+  footer,
+  onClose,
+  onRelocate
+}: {
+  path: string
+  settings: Settings
+  footer: (info: ReactNode) => ReactNode
+  onClose: () => void
+  onRelocate: () => void
+}) {
   const ctx = useRepoController(path, settings)
   return (
     <RepoProvider value={ctx}>
-      <RepoLayout footer={footer} />
+      {ctx.missing ? (
+        <div className="repo">
+          <div className="panel-empty" style={{ background: 'var(--bg-1)' }}>
+            <Icon name="folder" size={34} />
+            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>This repository's folder is gone</div>
+            <div className="mono" style={{ fontSize: 12 }}>{path}</div>
+            <div>It may have been moved, renamed or deleted.</div>
+            <div className="row" style={{ marginTop: 6 }}>
+              <button className="btn" onClick={onClose}>
+                <Icon name="x" size={13} /> Close tab
+              </button>
+              <button className="btn primary" onClick={onRelocate}>
+                <Icon name="folder" size={13} /> Locate folder…
+              </button>
+            </div>
+          </div>
+          {footer(<span className="item">Repository not found</span>)}
+        </div>
+      ) : (
+        <RepoLayout footer={footer} />
+      )}
     </RepoProvider>
   )
 }
