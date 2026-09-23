@@ -5,6 +5,7 @@ import { Console } from './components/Console'
 import { AskPassDialog, SettingsDialog } from './components/dialogs'
 import { Icon } from './components/Icon'
 import { RepoView } from './components/RepoView'
+import { UpdatePill, useUpdateStatus } from './components/Updates'
 import { Welcome } from './components/Welcome'
 import { baseName } from './format'
 import { resolveTheme, useTheme } from './theme'
@@ -18,6 +19,7 @@ export function App() {
   const [log, setLog] = useState<LogEntry[]>([])
   const [consoleOpen, setConsoleOpen] = useState(false)
   useTheme(settings?.theme)
+  const update = useUpdateStatus()
 
   // Load settings and restore open tabs that still exist.
   useEffect(() => {
@@ -136,6 +138,7 @@ export function App() {
         </div>
         <span className="spacer" />
         <div className="tab-actions">
+          <UpdatePill status={update} />
           <button
             className="icon-btn"
             title={resolveTheme(settings.theme) === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}

@@ -6,11 +6,11 @@ git does on your machine: same config, credential helpers, SSH keys and hooks.
 
 ## Install
 
-Download from the [Releases page](https://github.com/VivianHodgkinson/SourceControl/releases). Every build is available for x64 and ARM64.
+Download from the [Releases page](https://github.com/VivianHodgkinson/SourceControl/releases). Linux builds are available for x64 and ARM64; the Windows build is x64 and also runs on Windows on ARM through its built-in emulation.
 
 | Platform | File | Install |
 | --- | --- | --- |
-| Windows 10/11 | `SourceControl-<ver>-setup-x64.exe` (or `-arm64`) | Run the installer. A `-portable-x64.exe` that needs no install is also provided. |
+| Windows 10/11 | `SourceControl-<ver>-setup-x64.exe` | Run the installer. A `-portable-x64.exe` that needs no install is also provided. |
 | Ubuntu, Debian, Mint, Pop!_OS, elementary | `.deb` | `sudo apt install ./SourceControl-<ver>-linux-amd64.deb` |
 | Fedora, RHEL, Rocky, Alma, openSUSE | `.rpm` | `sudo dnf install ./SourceControl-<ver>-linux-x86_64.rpm` (openSUSE: `sudo zypper install ./…rpm`) |
 | Arch, Manjaro, EndeavourOS | `.pacman` | `sudo pacman -U ./SourceControl-<ver>-linux-x64.pacman` |
@@ -18,6 +18,13 @@ Download from the [Releases page](https://github.com/VivianHodgkinson/SourceCont
 | Any other distro | `.tar.gz` | Extract and run `sourcecontrol` |
 
 SourceControl needs Git. The Linux packages install it as a dependency. On Windows, install [Git for Windows](https://git-scm.com/download/win); the app tells you if Git is missing.
+
+## Updates
+
+SourceControl checks GitHub for new **published** releases on startup and every few hours (turn this off in Settings → Updates, or use *Check now*).
+
+- **Windows installer and AppImage** download the update in the background. A *Restart to update* button appears in the top bar, and the update also installs whenever you quit.
+- **Portable exe, .deb, .rpm, .pacman and .tar.gz** show a *vX available* button that opens the release page, so your package manager stays in charge.
 
 ## Releasing
 
@@ -28,7 +35,7 @@ npm version 0.2.0          # bumps package.json and creates the v0.2.0 tag
 git push --follow-tags
 ```
 
-The tag build uploads all installers to a **draft** GitHub Release. Review it and click *Publish*.
+The tag build uploads all installers to a **draft** GitHub Release. Review it and click *Publish*. Installed copies only see an update once the release is published.
 
 ## Running from source
 

@@ -23,7 +23,8 @@ function load(): StoredSettings {
     gitHubToken: null,
     pullMode: 'merge',
     theme: 'dark',
-    gitPath: null
+    gitPath: null,
+    autoUpdate: true
   }
   try {
     if (existsSync(file())) cache = { ...defaults, ...JSON.parse(readFileSync(file(), 'utf8')) }

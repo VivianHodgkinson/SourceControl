@@ -15,6 +15,7 @@ import type {
   Settings,
   Stash,
   Tag,
+  UpdateStatus,
   WorkingStatus
 } from './types'
 
@@ -40,6 +41,9 @@ export interface Api {
   readFile(repo: string, path: string): Promise<string | null>
   writeFile(repo: string, path: string, content: string): Promise<void>
   getGlobalIdentity(): Promise<{ name: string; email: string }>
+  getUpdateStatus(): Promise<UpdateStatus>
+  checkForUpdates(): Promise<UpdateStatus>
+  installUpdate(): Promise<void>
   setGlobalIdentity(name: string, email: string): Promise<void>
 
   // repositories

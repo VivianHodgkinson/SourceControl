@@ -4,6 +4,7 @@ import { api, on } from '../api'
 import { relTime, repoNameFromUrl, short } from '../format'
 import { Dialog, useUI } from '../ui'
 import { Icon } from './Icon'
+import { UpdateSettings } from './Updates'
 
 // ---------------------------------------------------------------- interactive rebase
 
@@ -316,6 +317,7 @@ export function SettingsDialog({ settings, onSaved, done }: { settings: Settings
   const [cloneDir, setCloneDir] = useState(settings.cloneDir)
   const [pullMode, setPullMode] = useState(settings.pullMode)
   const [gitPath, setGitPath] = useState(settings.gitPath ?? '')
+  const [autoUpdate, setAutoUpdate] = useState(settings.autoUpdate)
   const [gitInfo, setGitInfo] = useState<{ path: string; version: string } | null | undefined>(undefined)
   const [s, setS] = useState(settings)
   const [saving, setSaving] = useState(false)
@@ -344,7 +346,7 @@ export function SettingsDialog({ settings, onSaved, done }: { settings: Settings
       // Save the git location first: the identity is written with git itself.
       await api.saveSettings({ gitPath: gitPath.trim() || null })
       if (name.trim() && email.trim()) await api.setGlobalIdentity(name.trim(), email.trim())
-      let next = await api.saveSettings({ cloneDir, pullMode, gitPath: gitPath.trim() || null })
+      let next = await api.saveSettings({ cloneDir, pullMode, gitPath: gitPath.trim() || null, autoUpdate })
       if (!(await api.gitInfo())) throw new Error('Git still cannot be found. Check the Git executable path.')
       if (token.trim()) next = await api.setGitHubToken(token.trim())
       onSaved(next)
@@ -478,6 +480,9 @@ export function SettingsDialog({ settings, onSaved, done }: { settings: Settings
           <option value="ff-only">Fast-forward only</option>
         </select>
       </div>
+
+      <h4 className="faint" style={{ margin: '8px 0 0', fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase' }}>Updates</h4>
+      <UpdateSettings autoUpdate={autoUpdate} setAutoUpdate={setAutoUpdate} />
     </Dialog>
   )
 }

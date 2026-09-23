@@ -11,6 +11,7 @@ import * as github from './github'
 import { findGit } from './gitpath'
 import { configureRunner, gitBinary, resetGitBinary, run } from './runner'
 import * as store from './store'
+import { checkForUpdates, getUpdateStatus, initUpdater, installUpdate } from './updater'
 
 let win: BrowserWindow | null = null
 
@@ -194,6 +195,9 @@ const api: Api = {
     return existsSync(file) ? readFileSync(file, 'utf8') : null
   },
   writeFile: async (repo, path, content) => writeFileSync(resolve(repo, path), content),
+  getUpdateStatus: async () => getUpdateStatus(),
+  checkForUpdates,
+  installUpdate: async () => installUpdate(),
   getGlobalIdentity: async () => ({
     name: await git.getConfig(null, 'user.name'),
     email: await git.getConfig(null, 'user.email')
@@ -341,6 +345,7 @@ app.whenReady().then(async () => {
   configureRunner(env, (entry) => send('git:log', entry), () => findGit(store.getSettings().gitPath))
   createWindow()
   checkGitInstalled()
+  initUpdater((s) => send('update:status', s), () => store.getSettings().autoUpdate)
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

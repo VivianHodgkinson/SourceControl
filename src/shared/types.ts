@@ -158,6 +158,19 @@ export interface Settings {
   theme: Theme
   /** Explicit git executable; null means auto-detect */
   gitPath: string | null
+  autoUpdate: boolean
+}
+
+export interface UpdateStatus {
+  currentVersion: string
+  /** auto: downloads and installs itself; notify: links to the release; disabled: dev build */
+  mode: 'auto' | 'notify' | 'disabled'
+  state: 'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'up-to-date' | 'error'
+  version?: string
+  progress?: number
+  error?: string
+  releaseUrl?: string
+  lastChecked?: number
 }
 
 export type Theme = 'dark' | 'light' | 'system'

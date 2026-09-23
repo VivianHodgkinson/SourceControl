@@ -55,8 +55,7 @@
         {
           "target": "nsis",
           "arch": [
-            "x64",
-            "arm64"
+            "x64"
           ]
         },
         {
@@ -188,5 +187,8 @@
     "type": "git",
     "url": "https://github.com/VivianHodgkinson/SourceControl.git"
   },
-  "desktopName": "sourcecontrol.desktop"
+  "desktopName": "sourcecontrol.desktop",
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  }
 }
