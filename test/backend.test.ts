@@ -1,0 +1,308 @@
+// Integration tests for the git and git-flow backend, run against real repositories in a temp dir.
+import { execSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import assert from 'node:assert/strict'
+import * as git from '../src/main/git'
+import * as flow from '../src/main/gitflow'
+import { buildPatch, parseDiff, parseConflicts } from '../src/renderer/src/lib/diff'
+import { layoutGraph } from '../src/renderer/src/lib/graph'
+
+const sh = (cwd: string, cmd: string): string => execSync(cmd, { cwd, encoding: 'utf8', env: { ...process.env, GIT_AUTHOR_NAME: 'Test', GIT_AUTHOR_EMAIL: 't@x', GIT_COMMITTER_NAME: 'Test', GIT_COMMITTER_EMAIL: 't@x' } })
+process.env.GIT_AUTHOR_NAME = 'Test'
+process.env.GIT_AUTHOR_EMAIL = 't@x'
+process.env.GIT_COMMITTER_NAME = 'Test'
+process.env.GIT_COMMITTER_EMAIL = 't@x'
+
+let passed = 0
+async function test(name: string, fn: () => Promise<void>): Promise<void> {
+  try {
+    await fn()
+    passed++
+    console.log('  ✓', name)
+  } catch (e) {
+    console.log('  ✗', name, '\n   ', (e as Error).message, (e as Error).stack?.split('\n').find((l) => l.includes('backend.test')))
+    process.exitCode = 1
+  }
+}
+
+const base = mkdtempSync(join(tmpdir(), 'sc-test-'))
+const repo = join(base, 'repo')
+
+async function main(): Promise<void> {
+  await test('init + empty state', async () => {
+    execSync(`mkdir -p ${repo}`)
+    await git.init(repo)
+    await git.setConfig(repo, 'init.defaultBranch', 'main')
+    execSync('git symbolic-ref HEAD refs/heads/main', { cwd: repo })
+    const s = await git.repoState(repo)
+    assert.equal(s.empty, true)
+    assert.equal(s.branch, 'main')
+    assert.deepEqual(await git.log(repo, 100), [])
+  })
+
+  await test('status, stage, commit', async () => {
+    writeFileSync(join(repo, 'a.txt'), 'one\ntwo\nthree\nfour\nfive\nsix\nseven\neight\nnine\nten\n')
+    writeFileSync(join(repo, 'with space.txt'), 'x\n')
+    let st = await git.status(repo)
+    assert.equal(st.unstaged.length, 2)
+    assert.equal(st.unstaged[0].type, '?')
+    await git.stage(repo, ['a.txt', 'with space.txt'])
+    st = await git.status(repo)
+    assert.equal(st.staged.length, 2)
+    await git.unstage(repo, ['with space.txt'])
+    st = await git.status(repo)
+    assert.equal(st.staged.length, 1)
+    await git.stageAll(repo)
+    await git.commit(repo, 'Initial commit\n\nBody text', false)
+    const log = await git.log(repo, 10)
+    assert.equal(log.length, 1)
+    assert.equal(log[0].subject, 'Initial commit')
+    assert.deepEqual(log[0].refs, [{ name: 'main', type: 'head', current: true }])
+    const d = await git.commitDetail(repo, log[0].hash)
+    assert.equal(d.body, 'Body text')
+    assert.equal(d.files.length, 2)
+    assert.equal(d.files.find((f) => f.path === 'a.txt')?.additions, 10)
+  })
+
+  await test('partial staging of selected lines', async () => {
+    writeFileSync(join(repo, 'a.txt'), 'one\nTWO\nthree\nfour\nfive\nsix\nseven\neight\nNINE\nten\neleven\n')
+    const diffText = await git.workingDiff(repo, { path: 'a.txt', type: 'M' }, false, {})
+    const [file] = parseDiff(diffText)
+    assert.ok(file.hunks.length >= 1)
+    // Select only the "+TWO" and "-two" lines of the first hunk
+    const h = file.hunks[0]
+    const picks = new Set<number>()
+    h.lines.forEach((l, i) => {
+      if (/^(two|TWO)$/.test(l.text) && l.type !== ' ') picks.add(i)
+    })
+    assert.equal(picks.size, 2)
+    await git.applyPatch(repo, buildPatch(file, h, picks, false), true, false)
+    const staged = await git.workingDiff(repo, { path: 'a.txt', type: 'M' }, true, {})
+    assert.match(staged, /^\+TWO$/m)
+    assert.doesNotMatch(staged, /NINE|eleven/)
+    // Unstage it again via reverse patch of the staged diff
+    const [sf] = parseDiff(staged)
+    await git.applyPatch(repo, buildPatch(sf, sf.hunks[0], null, true), true, true)
+    assert.equal((await git.workingDiff(repo, { path: 'a.txt', type: 'M' }, true, {})).trim(), '')
+    // Discard only the "eleven" line from the working tree
+    const [wf] = parseDiff(await git.workingDiff(repo, { path: 'a.txt', type: 'M' }, false, {}))
+    const last = wf.hunks[wf.hunks.length - 1]
+    const idx = new Set([last.lines.findIndex((l) => l.text === 'eleven')])
+    await git.applyPatch(repo, buildPatch(wf, last, idx, true), false, true)
+    const content = readFileSync(join(repo, 'a.txt'), 'utf8')
+    assert.equal(content, 'one\nTWO\nthree\nfour\nfive\nsix\nseven\neight\nNINE\nten\n')
+    await git.stageAll(repo)
+    await git.commit(repo, 'Uppercase some lines', false)
+  })
+
+  await test('git flow init / feature / release / hotfix', async () => {
+    const cfg0 = await flow.flowConfig(repo)
+    assert.equal(cfg0.initialized, false)
+    await flow.flowInit(repo, { master: 'main', develop: 'develop', prefix: { ...cfg0.prefix, versiontag: 'v' } })
+    const cfg = await flow.flowConfig(repo)
+    assert.equal(cfg.initialized, true)
+    assert.equal((await git.repoState(repo)).branch, 'develop')
+
+    await flow.flowStart(repo, 'feature', 'login', null)
+    assert.equal((await git.repoState(repo)).branch, 'feature/login')
+    writeFileSync(join(repo, 'login.txt'), 'login\n')
+    await git.stageAll(repo)
+    await git.commit(repo, 'Add login', false)
+    await flow.flowFinish(repo, 'feature', 'login', { noFastForward: true })
+    let st = await git.repoState(repo)
+    assert.equal(st.branch, 'develop')
+    assert.equal(await git.refExists(repo, 'refs/heads/feature/login'), false)
+    const devLog = await git.log(repo, 5)
+    assert.match(devLog[0].subject, /Merge branch 'feature\/login' into develop/)
+    assert.equal(devLog[0].parents.length, 2)
+
+    await flow.flowStart(repo, 'release', '1.0.0', null)
+    await assert.rejects(flow.flowStart(repo, 'release', '1.1.0', null), /already an open release/)
+    writeFileSync(join(repo, 'VERSION'), '1.0.0\n')
+    await git.stageAll(repo)
+    await git.commit(repo, 'Bump version', false)
+    await flow.flowFinish(repo, 'release', '1.0.0', { tagMessage: 'Release 1.0.0' })
+    assert.equal(await git.refExists(repo, 'refs/tags/v1.0.0'), true)
+    assert.equal(await git.isAncestor(repo, 'v1.0.0', 'main'), true)
+    assert.equal(await git.isAncestor(repo, 'v1.0.0', 'develop'), true)
+
+    await flow.flowStart(repo, 'hotfix', '1.0.1', null)
+    writeFileSync(join(repo, 'VERSION'), '1.0.1\n')
+    await git.stageAll(repo)
+    await git.commit(repo, 'Hotfix', false)
+    await flow.flowFinish(repo, 'hotfix', '1.0.1', {})
+    assert.equal(await git.refExists(repo, 'refs/tags/v1.0.1'), true)
+    st = await git.repoState(repo)
+    assert.equal(st.branch, 'develop')
+    assert.equal(readFileSync(join(repo, 'VERSION'), 'utf8'), '1.0.1\n')
+
+    const tags = await git.tags(repo)
+    assert.deepEqual(tags.map((t) => t.name).sort(), ['v1.0.0', 'v1.0.1'])
+    // finish requires a clean tree; start carries changes over
+    await flow.flowStart(repo, 'feature', 'x', null)
+    writeFileSync(join(repo, 'VERSION'), 'dirty\n')
+    await assert.rejects(flow.flowFinish(repo, 'feature', 'x', {}), /uncommitted/)
+    execSync('git checkout -- VERSION', { cwd: repo })
+    await flow.flowFinish(repo, 'feature', 'x', {})
+  })
+
+  await test('flow finish resumes after a merge conflict', async () => {
+    await flow.flowStart(repo, 'feature', 'clash', null)
+    writeFileSync(join(repo, 'VERSION'), 'feature\n')
+    await git.stageAll(repo)
+    await git.commit(repo, 'feature change', false)
+    await git.checkout(repo, 'develop')
+    writeFileSync(join(repo, 'VERSION'), 'develop\n')
+    await git.stageAll(repo)
+    await git.commit(repo, 'develop change', false)
+    await assert.rejects(flow.flowFinish(repo, 'feature', 'clash', {}), /conflicts/)
+    let st = await git.repoState(repo)
+    assert.equal(st.operation, 'merge')
+    const status = await git.status(repo)
+    assert.equal(status.conflicted.length, 1)
+    assert.equal(status.conflicted[0].conflict, 'UU')
+    const chunks = parseConflicts(readFileSync(join(repo, 'VERSION'), 'utf8'))
+    const c = chunks.find((x) => x.kind === 'conflict')!
+    assert.equal(c.ours, 'develop')
+    assert.equal(c.theirs, 'feature')
+    await git.resolveConflict(repo, 'VERSION', 'theirs')
+    await git.continueOperation(repo)
+    st = await git.repoState(repo)
+    assert.equal(st.operation, null)
+    // Run finish again: already merged, so it just cleans up the branch.
+    await flow.flowFinish(repo, 'feature', 'clash', {})
+    assert.equal(await git.refExists(repo, 'refs/heads/feature/clash'), false)
+  })
+
+  await test('branches, rename, delete, stash', async () => {
+    await git.createBranch(repo, 'topic', 'develop', false)
+    await git.renameBranch(repo, 'topic', 'topic2')
+    let bs = await git.branches(repo)
+    assert.ok(bs.find((b) => b.name === 'topic2'))
+    assert.ok(bs.find((b) => b.current)?.name === 'develop')
+    await git.deleteBranch(repo, 'topic2', false)
+    bs = await git.branches(repo)
+    assert.ok(!bs.find((b) => b.name === 'topic2'))
+
+    writeFileSync(join(repo, 'stashme.txt'), 'x\n')
+    writeFileSync(join(repo, 'VERSION'), 'stashed\n')
+    await git.stashSave(repo, 'my stash', true, false)
+    let stashes = await git.stashes(repo)
+    assert.equal(stashes.length, 1)
+    assert.match(stashes[0].message, /my stash/)
+    const files = await git.changedFiles(repo, `${stashes[0].sha}^1`, stashes[0].sha)
+    assert.equal(files.length, 1)
+    assert.equal((await git.status(repo)).unstaged.length, 0)
+    await git.stashPop(repo, stashes[0].ref)
+    stashes = await git.stashes(repo)
+    assert.equal(stashes.length, 0)
+    assert.equal((await git.status(repo)).unstaged.length, 2)
+    await git.discardAll(repo)
+    assert.equal((await git.status(repo)).unstaged.length, 0)
+  })
+
+  await test('interactive rebase: reword, squash, drop, reorder', async () => {
+    await git.createBranch(repo, 'irb', 'develop', true)
+    const baseSha = (await git.log(repo, 1))[0].hash
+    for (const n of ['one', 'two', 'three', 'four']) {
+      writeFileSync(join(repo, `${n}.txt`), n + '\n')
+      await git.stageAll(repo)
+      await git.commit(repo, `Add ${n}`, false)
+    }
+    const commits = await git.rebaseCommits(repo, baseSha)
+    assert.deepEqual(commits.map((c) => c.subject), ['Add one', 'Add two', 'Add three', 'Add four'])
+    await git.interactiveRebase(repo, baseSha, [
+      { hash: commits[1].hash, action: 'reword', subject: '', message: "Add two (it's reworded)\n\nWith body" },
+      { hash: commits[0].hash, action: 'pick', subject: '' },
+      { hash: commits[2].hash, action: 'fixup', subject: '' },
+      { hash: commits[3].hash, action: 'drop', subject: '' }
+    ])
+    const after = await git.rebaseCommits(repo, baseSha)
+    assert.deepEqual(after.map((c) => c.subject), ["Add two (it's reworded)", 'Add one'])
+    const d = await git.commitDetail(repo, after[1].hash)
+    assert.deepEqual(d.files.map((f) => f.path).sort(), ['one.txt', 'three.txt'])
+    assert.equal((await git.repoState(repo)).operation, null)
+  })
+
+  await test('tags, reset, revert, cherry-pick, blame, history', async () => {
+    const head = (await git.log(repo, 1))[0]
+    await git.createTag(repo, 'annotated', head.hash, 'An annotated tag')
+    await git.createTag(repo, 'light', head.hash, '')
+    const log = await git.log(repo, 1)
+    assert.ok(log[0].refs.some((r) => r.type === 'tag' && r.name === 'annotated'))
+    await git.deleteTag(repo, 'light')
+    await git.revert(repo, head.hash, false)
+    assert.match((await git.log(repo, 1))[0].subject, /^Revert/)
+    await git.reset(repo, 'HEAD~1', 'hard')
+    assert.equal((await git.log(repo, 1))[0].hash, head.hash)
+    await git.checkout(repo, 'develop')
+    await git.cherryPick(repo, head.hash, false)
+    assert.equal((await git.log(repo, 1))[0].subject, head.subject)
+    const blame = await git.blame(repo, 'a.txt', null)
+    assert.equal(blame.length, 10)
+    assert.equal(blame[1].content, 'TWO')
+    assert.equal(blame[1].summary, 'Uppercase some lines')
+    const hist = await git.fileHistory(repo, 'a.txt')
+    assert.equal(hist.length, 2)
+  })
+
+  await test('remotes: clone, push, fetch, pull, upstream tracking', async () => {
+    const bare = join(base, 'remote.git')
+    sh(base, `git init -q --bare ${bare}`)
+    await git.addRemote(repo, 'origin', bare)
+    await git.push(repo, 'origin', 'develop', true, false)
+    await git.push(repo, 'origin', 'main', true, false)
+    let st = await git.repoState(repo)
+    assert.equal(st.upstream, 'origin/develop')
+    const clone = join(base, 'clone')
+    await git.clone(bare, clone, () => {})
+    sh(clone, 'git checkout -q develop')
+    writeFileSync(join(clone, 'remote.txt'), 'r\n')
+    sh(clone, 'git add -A && git commit -qm "Remote change" && git push -q origin develop')
+    await git.fetch(repo, null, true)
+    st = await git.repoState(repo)
+    assert.equal(st.behind, 1)
+    await git.pull(repo, 'ff-only')
+    st = await git.repoState(repo)
+    assert.equal(st.behind, 0)
+    const remotes = await git.remotes(repo)
+    assert.equal(remotes[0].name, 'origin')
+    const bs = await git.branches(repo)
+    assert.ok(bs.some((b) => b.remote === 'origin' && b.name === 'origin/develop'))
+    await git.checkoutRemote(repo, 'origin/main', 'main')
+    assert.equal((await git.repoState(repo)).branch, 'main')
+  })
+
+  await test('graph layout', async () => {
+    const commits = await git.log(repo, 500)
+    const { rows, width } = layoutGraph(commits)
+    assert.equal(rows.length, commits.length)
+    assert.ok(width >= 2)
+    // Every merge commit must have 2 outgoing edges; roots none.
+    commits.forEach((c, i) => {
+      assert.equal(rows[i].outgoing.length, c.parents.length, `outgoing for ${c.subject}`)
+    })
+    // Simple synthetic: a merge of two branches
+    const g = layoutGraph([
+      { hash: 'm', parents: ['a', 'b'] },
+      { hash: 'b', parents: ['r'] },
+      { hash: 'a', parents: ['r'] },
+      { hash: 'r', parents: [] }
+    ])
+    assert.equal(g.rows[0].col, 0)
+    assert.equal(g.rows[1].col, 1)
+    assert.equal(g.rows[2].col, 0)
+    assert.equal(g.rows[3].col, 0)
+    assert.equal(g.rows[3].incoming.length, 1)
+    assert.deepEqual(g.rows[2].shift, [{ from: 1, lane: 0, color: 1 }])
+    assert.equal(g.width, 2)
+  })
+
+  console.log(`\n${passed} passed${process.exitCode ? ', some FAILED' : ''}`)
+  if (!process.exitCode) rmSync(base, { recursive: true, force: true })
+  else console.log(`Test repo kept for inspection: ${repo}`)
+}
+
+main()

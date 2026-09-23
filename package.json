@@ -1,0 +1,59 @@
+{
+  "name": "sourcecontrol",
+  "version": "0.1.0",
+  "description": "A dark & green desktop Git client with built-in Git Flow",
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "dist": "electron-vite build && electron-builder",
+    "test": "esbuild test/backend.test.ts --bundle --platform=node --alias:@shared=./src/shared --sourcemap=inline --outfile=out/test/backend.test.js --log-level=warning && node --enable-source-maps out/test/backend.test.js"
+  },
+  "author": "Vivian Hodgkinson <vivian@issuesoftware.co.za>",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
+    "esbuild": "^0.25.12",
+    "typescript": "^7.0.2",
+    "vite": "^7.3.6"
+  },
+  "productName": "SourceControl",
+  "build": {
+    "appId": "za.co.issuesoftware.sourcecontrol",
+    "productName": "SourceControl",
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "resources"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "rpm"
+      ],
+      "category": "Development"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.developer-tools"
+    },
+    "win": {
+      "target": "nsis"
+    }
+  }
+}
