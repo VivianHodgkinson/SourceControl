@@ -1,6 +1,6 @@
 // Integration tests for the git and git-flow backend, run against real repositories in a temp dir.
 import { execSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import assert from 'node:assert/strict'
@@ -14,6 +14,10 @@ process.env.GIT_AUTHOR_NAME = 'Test'
 process.env.GIT_AUTHOR_EMAIL = 't@x'
 process.env.GIT_COMMITTER_NAME = 'Test'
 process.env.GIT_COMMITTER_EMAIL = 't@x'
+// Keep line endings byte-for-byte on Windows, where core.autocrlf is usually on.
+process.env.GIT_CONFIG_COUNT = '1'
+process.env.GIT_CONFIG_KEY_0 = 'core.autocrlf'
+process.env.GIT_CONFIG_VALUE_0 = 'false'
 
 let passed = 0
 async function test(name: string, fn: () => Promise<void>): Promise<void> {
@@ -32,7 +36,7 @@ const repo = join(base, 'repo')
 
 async function main(): Promise<void> {
   await test('init + empty state', async () => {
-    execSync(`mkdir -p ${repo}`)
+    mkdirSync(repo, { recursive: true })
     await git.init(repo)
     await git.setConfig(repo, 'init.defaultBranch', 'main')
     execSync('git symbolic-ref HEAD refs/heads/main', { cwd: repo })
@@ -250,7 +254,7 @@ async function main(): Promise<void> {
 
   await test('remotes: clone, push, fetch, pull, upstream tracking', async () => {
     const bare = join(base, 'remote.git')
-    sh(base, `git init -q --bare ${bare}`)
+    sh(base, `git init -q --bare "${bare}"`)
     await git.addRemote(repo, 'origin', bare)
     await git.push(repo, 'origin', 'develop', true, false)
     await git.push(repo, 'origin', 'main', true, false)

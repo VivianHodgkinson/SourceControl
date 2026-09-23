@@ -1,7 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, shell } from 'electron'
 import { spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, watch, writeFileSync, type FSWatcher } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join, normalize, resolve } from 'node:path'
 import type { Api, ApiMethod, IpcResult } from '@shared/api'
 import type { AskPassRequest } from '@shared/types'
 import { startAskPass, stopAskPass } from './askpass'
@@ -13,6 +13,32 @@ import * as store from './store'
 
 let win: BrowserWindow | null = null
 
+relaunchAppImageWithoutSandboxIfNeeded()
+if (process.platform === 'win32') app.setAppUserModelId('za.co.issuesoftware.sourcecontrol')
+
+const devIcon = join(__dirname, '../../resources/icon.png')
+
+/**
+ * AppImages can't use Chromium's setuid sandbox helper (the image is mounted
+ * nosuid), so they rely on the user-namespace sandbox, which Ubuntu 23.10+
+ * blocks for unconfined apps and the app then fails to start. In that case only,
+ * relaunch the AppImage with --no-sandbox. The switch has to be present at
+ * process start; appending it at runtime crashes Chromium's helper processes.
+ */
+function relaunchAppImageWithoutSandboxIfNeeded(): void {
+  const image = process.env.APPIMAGE
+  if (!image || app.commandLine.hasSwitch('no-sandbox')) return
+  let restricted = false
+  try {
+    restricted = readFileSync('/proc/sys/kernel/apparmor_restrict_unprivileged_userns', 'utf8').trim() === '1'
+  } catch {
+    // Setting absent: user namespaces are available and the sandbox works.
+  }
+  if (!restricted) return
+  spawn(image, [...process.argv.slice(1), '--no-sandbox'], { detached: true, stdio: 'ignore' }).unref()
+  app.exit(0)
+}
+
 function createWindow(): void {
   win = new BrowserWindow({
     width: 1480,
@@ -23,6 +49,7 @@ function createWindow(): void {
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#080c0a' : '#ffffff',
     title: 'SourceControl',
     autoHideMenuBar: true,
+    ...(process.platform === 'linux' && existsSync(devIcon) ? { icon: devIcon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -139,10 +166,10 @@ const api: Api = {
   watchRepo,
   unwatchRepo: async (repo) => unwatchRepo(repo),
   openPath: async (p) => {
-    const err = await shell.openPath(p)
+    const err = await shell.openPath(normalize(p))
     if (err) throw new Error(err)
   },
-  showInFolder: async (p) => shell.showItemInFolder(p),
+  showInFolder: async (p) => shell.showItemInFolder(normalize(p)),
   openTerminal,
   openExternal: (url) => shell.openExternal(url),
   readFile: async (repo, path) => {
@@ -296,10 +323,35 @@ app.whenReady().then(async () => {
   const env = await startAskPass(askPass)
   configureRunner(env, (entry) => send('git:log', entry))
   createWindow()
+  checkGitInstalled()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
+
+/** git is the one external requirement; explain how to get it if it's missing. */
+async function checkGitInstalled(): Promise<void> {
+  const ok = await new Promise<boolean>((done) => {
+    const p = spawn('git', ['--version'], { windowsHide: true })
+    p.once('error', () => done(false))
+    p.once('close', (code) => done(code === 0))
+  })
+  if (ok || !win) return
+  const windows = process.platform === 'win32'
+  const { response } = await dialog.showMessageBox(win, {
+    type: 'warning',
+    title: 'Git not found',
+    message: 'SourceControl needs Git, but it could not be found.',
+    detail: windows
+      ? 'Install Git for Windows, then restart SourceControl.'
+      : process.platform === 'darwin'
+        ? 'Install Git (for example with `xcode-select --install` or Homebrew), then restart SourceControl.'
+        : 'Install git with your package manager (e.g. `sudo apt install git`, `sudo dnf install git`, `sudo pacman -S git`), then restart SourceControl.',
+    buttons: windows ? ['Download Git', 'Close'] : ['OK'],
+    defaultId: 0
+  })
+  if (windows && response === 0) shell.openExternal('https://git-scm.com/download/win')
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

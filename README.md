@@ -4,14 +4,41 @@ A dark & green desktop Git client in the spirit of GitKraken and Sourcetree, wit
 Built with Electron, React and TypeScript on top of the `git` command line, so it behaves exactly like
 git does on your machine: same config, credential helpers, SSH keys and hooks.
 
-## Running
+## Install
+
+Download from the [Releases page](https://github.com/VivianHodgkinson/SourceControl/releases). Every build is available for x64 and ARM64.
+
+| Platform | File | Install |
+| --- | --- | --- |
+| Windows 10/11 | `SourceControl-<ver>-setup-x64.exe` (or `-arm64`) | Run the installer. A `-portable-x64.exe` that needs no install is also provided. |
+| Ubuntu, Debian, Mint, Pop!_OS, elementary | `.deb` | `sudo apt install ./SourceControl-<ver>-linux-amd64.deb` |
+| Fedora, RHEL, Rocky, Alma, openSUSE | `.rpm` | `sudo dnf install ./SourceControl-<ver>-linux-x86_64.rpm` (openSUSE: `sudo zypper install ./…rpm`) |
+| Arch, Manjaro, EndeavourOS | `.pacman` | `sudo pacman -U ./SourceControl-<ver>-linux-x64.pacman` |
+| Any other distro | `.AppImage` | `chmod +x SourceControl-*.AppImage && ./SourceControl-*.AppImage` |
+| Any other distro | `.tar.gz` | Extract and run `sourcecontrol` |
+
+SourceControl needs Git. The Linux packages install it as a dependency. On Windows, install [Git for Windows](https://git-scm.com/download/win); the app tells you if Git is missing.
+
+## Releasing
+
+CI (`.github/workflows/build.yml`) runs the tests on Ubuntu and Windows and builds every package on each push. To publish a release:
+
+```sh
+npm version 0.2.0          # bumps package.json and creates the v0.2.0 tag
+git push --follow-tags
+```
+
+The tag build uploads all installers to a **draft** GitHub Release. Review it and click *Publish*.
+
+## Running from source
 
 ```sh
 npm install
 npm run dev        # development with hot reload
 npm run build      # production build into out/
 npm start          # run the production build
-npm run dist       # package installers (AppImage/rpm on Linux, dmg on macOS, nsis on Windows) into dist/
+npm run dist:linux # AppImage, deb, rpm, pacman, tar.gz into dist/ (deb/rpm/pacman need rpm + bsdtar installed)
+npm run dist:win   # Windows installer + portable exe (run on Windows, or on Linux with Wine)
 npm test           # backend integration tests against real temporary repos
 npm run typecheck
 ```
