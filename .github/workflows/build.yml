@@ -58,14 +58,12 @@ jobs:
       - run: npm ci
       - run: npm run build
       - name: Package
-        # Tag pushes (v*) upload to a draft GitHub Release; other runs only build.
-        run: npx electron-builder ${{ matrix.args }} --publish ${{ startsWith(github.ref, 'refs/tags/v') && 'always' || 'never' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder ${{ matrix.args }} --publish never
       - uses: actions/upload-artifact@v7
         with:
           name: SourceControl-${{ matrix.name }}
           if-no-files-found: error
+          # latest*.yml and .blockmap files are what installed copies use to auto-update.
           path: |
             dist/*.exe
             dist/*.AppImage
@@ -73,3 +71,31 @@ jobs:
             dist/*.rpm
             dist/*.pacman
             dist/*.tar.gz
+            dist/*.yml
+            dist/*.blockmap
+            !dist/builder-debug.yml
+            !dist/builder-effective-config.yaml
+
+  release:
+    name: Draft release
+    # Only after every package has built, so a draft never appears half-uploaded
+    # (publishing a partial draft would ship a release with missing files).
+    needs: package
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create draft release with all files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ls -la dist
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --draft \
+            --verify-tag \
+            --title "${GITHUB_REF_NAME#v}" \
+            --notes "SourceControl ${GITHUB_REF_NAME#v}"
