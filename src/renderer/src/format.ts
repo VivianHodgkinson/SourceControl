@@ -39,6 +39,16 @@ export function repoNameFromUrl(url: string): string {
   return baseName(url.trim().replace(/\.git\/?$/, '').replace(/[:]/g, '/')) || 'repo'
 }
 
+/** Browser URL for a remote's clone URL (https, ssh:// or scp-style), or null for local paths. */
+export function remoteWebUrl(url: string): string | null {
+  const u = url.trim().replace(/\.git\/?$/, '').replace(/\/+$/, '')
+  const m =
+    /^(?:https?|ssh|git):\/\/(?:[^@/]+@)?([^/:]+)(?::\d+)?\/(.+)$/.exec(u) ?? // scheme://[user@]host[:port]/path
+    /^(?:[^@/]+@)?([^/:]+):(?!\/)(.+)$/.exec(u) // [user@]host:path
+  if (!m || !m[1].includes('.')) return null
+  return `https://${m[1]}/${m[2]}`
+}
+
 export function copy(text: string): void {
   navigator.clipboard.writeText(text).catch(() => {})
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import type { Settings } from '@shared/types'
-import { createBranch, createPullRequest, fetchAll, flowMenu, pull, push, stash, stashPop } from '../actions'
+import { createBranch, createPullRequest, fetchAll, flowMenu, openRemote, openRemoteMenu, pull, push, stash, stashPop } from '../actions'
 import { api } from '../api'
 import { short } from '../format'
 import { RepoProvider, useRepo, useRepoController } from '../repo'
@@ -289,6 +289,17 @@ function Toolbar({
       <div className="sep" />
       <Tool icon="flow" label="Git Flow" onClick={(e) => ctx.ui.menu(below(e), flowMenu(ctx))} disabled={busy} />
       <Tool icon="pr" label="Pull Request" onClick={() => createPullRequest(ctx)} disabled={busy || !hasRemote} title={ctx.settings.hasGitHubToken ? 'Create a GitHub pull request' : 'Add a GitHub token in Settings to create pull requests'} />
+      <Tool
+        icon="external"
+        label="Remote"
+        onClick={() => openRemote(ctx)}
+        onMenu={(e) => {
+          e.preventDefault()
+          ctx.ui.menu(below(e), openRemoteMenu(ctx))
+        }}
+        disabled={!hasRemote}
+        title="Open the remote in your browser"
+      />
       <div className="sep" />
       <Tool icon="terminal" label="Terminal" onClick={() => api.openTerminal(ctx.path).catch((e) => ctx.ui.toast(e.message, 'error'))} />
       <Tool icon="folder" label="Folder" onClick={() => api.openPath(ctx.path)} />

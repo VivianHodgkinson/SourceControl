@@ -1,7 +1,7 @@
 import type { Branch, Commit, FileChange, FlowKind, Stash, Tag } from '@shared/types'
 import { api } from './api'
 import { PullRequestDialog, RebaseDialog } from './components/dialogs'
-import { copy, short } from './format'
+import { copy, remoteWebUrl, short } from './format'
 import type { RepoCtx } from './repo'
 import type { MenuItem } from './ui'
 
@@ -596,6 +596,38 @@ export async function createPullRequest(ctx: RepoCtx, branch?: string): Promise<
   })
 }
 
+// ---------------------------------------------------------------- remote in browser
+
+/** The remote to open by default: the current branch's upstream remote, then origin, then the first with a web URL. */
+function defaultWebRemote(ctx: RepoCtx): { name: string; web: string } | null {
+  const up = ctx.data.branches.find((b) => !b.remote && b.current)?.upstream?.split('/')[0]
+  const rs = ctx.data.remotes.map((r) => ({ name: r.name, web: remoteWebUrl(r.url) })).filter((r): r is { name: string; web: string } => !!r.web)
+  return rs.find((r) => r.name === up) ?? rs.find((r) => r.name === 'origin') ?? rs[0] ?? null
+}
+
+export function openRemote(ctx: RepoCtx): void {
+  const r = defaultWebRemote(ctx)
+  if (!r) return ctx.ui.toast('No remote with a web address found for this repository.', 'error')
+  api.openExternal(r.web)
+}
+
+export function openRemoteMenu(ctx: RepoCtx): MenuItem[] {
+  const cur = currentBranch(ctx)
+  const upstream = ctx.data.branches.find((b) => !b.remote && b.current)?.upstream
+  const items: MenuItem[] = []
+  for (const r of ctx.data.remotes) {
+    const web = remoteWebUrl(r.url)
+    if (!web) continue
+    items.push({ label: `Open ${r.name}`, icon: 'external', onClick: () => api.openExternal(web) })
+    if (cur && upstream?.startsWith(`${r.name}/`)) {
+      const branch = upstream.slice(r.name.length + 1)
+      items.push({ label: `Open ${branch} on ${r.name}`, icon: 'branch', onClick: () => api.openExternal(`${web}/tree/${branch.split('/').map(encodeURIComponent).join('/')}`) })
+    }
+  }
+  if (!items.length) items.push({ header: 'No remote with a web address' })
+  return items
+}
+
 // ---------------------------------------------------------------- working tree files
 
 export async function discardFiles(ctx: RepoCtx, files: FileChange[]): Promise<void> {
@@ -754,11 +786,11 @@ export function stashMenu(ctx: RepoCtx, s: Stash): MenuItem[] {
 
 export function remoteMenu(ctx: RepoCtx, name: string): MenuItem[] {
   const url = ctx.data.remotes.find((r) => r.name === name)?.url ?? ''
-  const web = /github\.com[:/](.+?)(?:\.git)?$/.exec(url)
+  const web = remoteWebUrl(url)
   return [
     { label: `Fetch ${name}`, icon: 'fetch', onClick: () => ctx.run('Fetching', () => api.fetch(ctx.path, name, true), `Fetched ${name}`) },
     { label: 'Push all tags', icon: 'tag', onClick: () => ctx.run('Pushing tags', () => api.pushTags(ctx.path, name), `Pushed tags to ${name}`) },
-    ...(web ? [{ label: 'Open on GitHub', icon: 'external' as const, onClick: () => api.openExternal(`https://github.com/${web[1]}`) }] : []),
+    ...(web ? [{ label: 'Open in browser', icon: 'external' as const, onClick: () => api.openExternal(web) }] : []),
     { label: 'Copy URL', icon: 'copy', onClick: () => copy(url) },
     { separator: true },
     { label: 'Edit remote…', icon: 'edit', onClick: () => editRemote(ctx, name) },

@@ -9,6 +9,7 @@ import * as flow from '../src/main/gitflow'
 import { buildPatch, parseDiff, parseConflicts } from '../src/renderer/src/lib/diff'
 import { layoutGraph } from '../src/renderer/src/lib/graph'
 import { assetName, installCommand } from '../src/main/updateAsset'
+import { remoteWebUrl } from '../src/renderer/src/format'
 
 const sh = (cwd: string, cmd: string): string => execSync(cmd, { cwd, encoding: 'utf8', env: { ...process.env, GIT_AUTHOR_NAME: 'Test', GIT_AUTHOR_EMAIL: 't@x', GIT_COMMITTER_NAME: 'Test', GIT_COMMITTER_EMAIL: 't@x' } })
 process.env.GIT_AUTHOR_NAME = 'Test'
@@ -322,6 +323,17 @@ async function main(): Promise<void> {
     assert.equal(installCommand('deb', '/x.deb'), 'sudo apt install "/x.deb"')
     assert.equal(installCommand('pacman', '/x.pacman'), 'sudo pacman -U "/x.pacman"')
     assert.equal(installCommand('portable', '/x.exe'), null)
+  })
+
+  await test('remoteWebUrl turns clone URLs into browser URLs', async () => {
+    assert.equal(remoteWebUrl('https://github.com/owner/repo.git'), 'https://github.com/owner/repo')
+    assert.equal(remoteWebUrl('https://user:token@github.com/owner/repo'), 'https://github.com/owner/repo')
+    assert.equal(remoteWebUrl('git@github.com:owner/repo.git'), 'https://github.com/owner/repo')
+    assert.equal(remoteWebUrl('ssh://git@github.com:22/owner/repo.git'), 'https://github.com/owner/repo')
+    assert.equal(remoteWebUrl('git@gitlab.com:group/sub/repo.git'), 'https://gitlab.com/group/sub/repo')
+    assert.equal(remoteWebUrl('/home/u/repos/bare.git'), null)
+    assert.equal(remoteWebUrl('C:\\repos\\bare.git'), null)
+    assert.equal(remoteWebUrl('file:///srv/repo.git'), null)
   })
 
   console.log(`\n${passed} passed${process.exitCode ? ', some FAILED' : ''}`)
